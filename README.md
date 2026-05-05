@@ -9,9 +9,8 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 
 **你只要将其clone到claude code作为skill即可使用！**
 
-`<table>`
-
-<tr>
+<table>
+  <tr>
     <td><img src="example\e1.png" width="300"></td>
     <td><img src="example\e2.png" width="300"></td>
   </tr>
