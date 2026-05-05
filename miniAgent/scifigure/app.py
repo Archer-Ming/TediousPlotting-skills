@@ -93,7 +93,7 @@ class SciFigureStudio(QMainWindow):
         icon_path = ASSETS_DIR / "pixel_style.png"
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
-        self.resize(1620, 980)
+        self.resize(1720, 1020)
         self.setStyleSheet(APP_QSS)
 
     def _build_menu(self) -> None:
@@ -142,7 +142,7 @@ class SciFigureStudio(QMainWindow):
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
-        splitter.setSizes([320, 760, 460])
+        splitter.setSizes([360, 800, 540])
         root_layout.addWidget(splitter, 1)
 
     # ====================================================================
@@ -173,17 +173,17 @@ class SciFigureStudio(QMainWindow):
         layout.addWidget(self.model_badge)
 
         # 操作按钮
-        import_btn = QPushButton("📂 导入数据")
+        import_btn = QPushButton("导入数据")
         import_btn.setObjectName("Secondary")
         import_btn.clicked.connect(self.on_open_data)
         layout.addWidget(import_btn)
 
-        export_btn = QPushButton("📤 导出图像")
+        export_btn = QPushButton("导出图像")
         export_btn.setObjectName("Secondary")
         export_btn.clicked.connect(self.on_export_figure)
         layout.addWidget(export_btn)
 
-        cfg_btn = QPushButton("⚙️ 模型配置")
+        cfg_btn = QPushButton("模型配置")
         cfg_btn.clicked.connect(self.on_open_model_config)
         layout.addWidget(cfg_btn)
         return bar
@@ -200,7 +200,7 @@ class SciFigureStudio(QMainWindow):
 
         # 顶部固定标题
         header = QLabel("Agent 配置")
-        header.setStyleSheet("color:#1E1B4B; font-size:18px; font-weight:900; padding:14px 16px 4px 16px;")
+        header.setStyleSheet("color:#1E1B4B; font-size:20px; font-weight:900; padding:14px 16px 4px 16px;")
         outer.addWidget(header)
         sub = QLabel("管理智能体使用的技能、工具、模型与数据")
         sub.setObjectName("Subtle")
@@ -221,7 +221,7 @@ class SciFigureStudio(QMainWindow):
         body_layout.setSpacing(14)
 
         # ---- Skills 分区 ----
-        body_layout.addWidget(SectionHeader("📦 SKILLS · 专业技能"))
+        body_layout.addWidget(SectionHeader("SKILLS · 专业技能"))
         self.skill_list_holder = QWidget()
         self.skill_list_layout = QVBoxLayout(self.skill_list_holder)
         self.skill_list_layout.setContentsMargins(0, 0, 0, 0)
@@ -234,34 +234,28 @@ class SciFigureStudio(QMainWindow):
         body_layout.addWidget(add_skill_btn)
 
         # ---- Tools 分区 ----
-        body_layout.addWidget(SectionHeader("🛠️ TOOLS · 工具"))
-        # 现版本只有一个内置工具：代码执行（沙箱）。其它是占位
+        body_layout.addWidget(SectionHeader("TOOLS · 工具"))
+        # 现版本只有沙箱执行器一个真工具
         tool_box = QVBoxLayout()
         tool_box.setSpacing(8)
         tool_box.addWidget(ToolCard(
             "code_exec", "Matplotlib 沙箱执行器",
             "在隔离的子进程中安全执行 Agent 生成的绘图代码。", True, True))
-        tool_box.addWidget(ToolCard(
-            "data_query", "数据查询（即将推出）",
-            "支持 Agent 反查 df 字段统计、分组聚合等。", False, False))
-        tool_box.addWidget(ToolCard(
-            "image_export", "图像导出（即将推出）",
-            "Agent 自主导出 PNG/SVG/PDF 多格式。", False, False))
         body_layout.addLayout(tool_box)
 
         # ---- LLM 分区 ----
-        body_layout.addWidget(SectionHeader("🧠 LLM · 大模型"))
+        body_layout.addWidget(SectionHeader("LLM · 大模型"))
         self.llm_status_label = QLabel("未配置")
         self.llm_status_label.setObjectName("Subtle")
         self.llm_status_label.setWordWrap(True)
         body_layout.addWidget(self.llm_status_label)
-        llm_btn = QPushButton("⚙️ 修改模型配置")
+        llm_btn = QPushButton("修改模型配置")
         llm_btn.setObjectName("Secondary")
         llm_btn.clicked.connect(self.on_open_model_config)
         body_layout.addWidget(llm_btn)
 
         # ---- 数据分区 ----
-        body_layout.addWidget(SectionHeader("📁 DATA · 数据"))
+        body_layout.addWidget(SectionHeader("DATA · 数据"))
         self.data_status_label = QLabel("未加载数据")
         self.data_status_label.setObjectName("Subtle")
         self.data_status_label.setWordWrap(True)
@@ -269,15 +263,15 @@ class SciFigureStudio(QMainWindow):
 
         data_btns = QVBoxLayout()
         data_btns.setSpacing(6)
-        b1 = QPushButton("📂 导入文件")
+        b1 = QPushButton("导入文件")
         b1.setObjectName("Secondary")
         b1.clicked.connect(self.on_open_data)
         data_btns.addWidget(b1)
-        b2 = QPushButton("📋 从剪贴板")
+        b2 = QPushButton("从剪贴板")
         b2.setObjectName("Secondary")
         b2.clicked.connect(self.on_load_clipboard)
         data_btns.addWidget(b2)
-        b3 = QPushButton("✍️ 手动录入")
+        b3 = QPushButton("手动录入")
         b3.setObjectName("Secondary")
         b3.clicked.connect(self.on_manual_data)
         data_btns.addWidget(b3)
@@ -329,7 +323,7 @@ class SciFigureStudio(QMainWindow):
             )
             self.llm_status_label.setText("尚未配置 API Key。请点击下方按钮设置。")
         else:
-            self.model_badge.setText(f"🧠 {self.config.model}")
+            self.model_badge.setText(f"模型：{self.config.model}")
             self.model_badge.setStyleSheet("")  # 走默认 QSS
             self.llm_status_label.setText(
                 f"<b>模型：</b>{self.config.model}<br>"
@@ -348,7 +342,7 @@ class SciFigureStudio(QMainWindow):
 
         head = QHBoxLayout()
         title = QLabel("可视化反馈")
-        title.setStyleSheet("color:#1E1B4B; font-size:18px; font-weight:900;")
+        title.setStyleSheet("color:#1E1B4B; font-size:20px; font-weight:900;")
         head.addWidget(title)
         head.addStretch(1)
         self.image_meta_label = QLabel("等待 Agent 产出图像…")
@@ -374,7 +368,7 @@ class SciFigureStudio(QMainWindow):
         self.image_label.setObjectName("ImagePlaceholder")
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setText(
-            "🎨 还没有图像。\n\n请在右侧对话框告诉 Agent 你想画什么。\n"
+            "还没有图像。\n\n请在右侧对话框告诉 Agent 你想画什么。\n"
             "例如：\n• 用 df 画各组的箱线图\n• 把上一张图改成 Nature 风格\n• 给柱状图加误差棒"
         )
         self.image_scroll.setWidget(self.image_label)
@@ -390,7 +384,7 @@ class SciFigureStudio(QMainWindow):
         self.next_btn.clicked.connect(self._on_next_image)
         self.image_index_label = QLabel("—")
         self.image_index_label.setObjectName("Subtle")
-        export_btn = QPushButton("💾 导出当前")
+        export_btn = QPushButton("导出当前")
         export_btn.setObjectName("Secondary")
         export_btn.clicked.connect(self.on_export_figure)
         ops.addWidget(self.prev_btn)
@@ -422,7 +416,7 @@ class SciFigureStudio(QMainWindow):
         self.code_view.setPlaceholderText("Agent 生成的最近一段绘图代码会显示在这里，可复制到本地复现。")
         self.code_view.setReadOnly(False)
         cl.addWidget(self.code_view, 1)
-        copy = QPushButton("📋 复制代码")
+        copy = QPushButton("复制代码")
         copy.setObjectName("Secondary")
         copy.clicked.connect(self._on_copy_code)
         cl.addWidget(copy)
@@ -483,8 +477,8 @@ class SciFigureStudio(QMainWindow):
         layout.setSpacing(8)
 
         head = QHBoxLayout()
-        title = QLabel("🤖 Agent 对话")
-        title.setStyleSheet("color:#1E1B4B; font-size:18px; font-weight:900;")
+        title = QLabel("Agent 对话")
+        title.setStyleSheet("color:#1E1B4B; font-size:20px; font-weight:900;")
         head.addWidget(title)
         head.addStretch(1)
         clear_btn = QToolButton()
@@ -521,7 +515,7 @@ class SciFigureStudio(QMainWindow):
             "和 Agent 描述你的绘图需求，Enter 发送 / Shift+Enter 换行。\n"
             "例如：用 df 画各组冲击强度的小提琴+箱线图，标题用中文。"
         )
-        self.chat_input.setMaximumHeight(110)
+        self.chat_input.setMaximumHeight(130)
         self.chat_input.send_requested.connect(self.on_send_chat)
         il.addWidget(self.chat_input)
 
@@ -557,12 +551,12 @@ class SciFigureStudio(QMainWindow):
 
     def _add_user_message(self, text: str) -> None:
         bubble = ChatBubble("user", text)
-        bubble.setMaximumWidth(380)
+        bubble.setMaximumWidth(440)
         self._add_chat_widget(bubble, align_right=True)
 
     def _add_agent_message(self, text: str) -> ChatBubble:
         bubble = ChatBubble("assistant", text)
-        bubble.setMaximumWidth(420)
+        bubble.setMaximumWidth(480)
         self._add_chat_widget(bubble, align_right=False)
         return bubble
 
@@ -571,7 +565,7 @@ class SciFigureStudio(QMainWindow):
         label.setObjectName("Subtle")
         label.setWordWrap(True)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet("color:#94A3B8; font-size:12px; padding:2px 16px;")
+        label.setStyleSheet("color:#94A3B8; font-size:13px; padding:2px 16px;")
         self._add_chat_widget(label, align_right=False)
 
     def _post_system(self, text: str) -> None:

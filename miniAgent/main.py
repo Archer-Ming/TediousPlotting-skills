@@ -11,7 +11,7 @@ def main() -> int:
     app.setApplicationName("SciFigure Agent Studio")
     app.setOrganizationName("SciFigure")
     app.setStyle("Fusion")
-    app.setFont(QFont("Microsoft YaHei", 11))
+    app.setFont(QFont("Microsoft YaHei", 12))
 
     win = SciFigureStudio()
     win.show()

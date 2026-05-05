@@ -39,17 +39,47 @@ class ChatBubble(QFrame):
         self.setObjectName("UserBubble" if role == "user" else "AgentBubble")
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
 
+        # 直接给 frame 自身刷样式，避免 QSS 选择器在嵌套 QLabel 上失效
+        if role == "user":
+            self.setStyleSheet(
+                "QFrame { background: qlineargradient(x1:0,y1:0,x2:1,y2:0,"
+                " stop:0 #6366F1, stop:1 #8B5CF6); border: none; border-radius: 14px; }"
+            )
+            body_color = "#FFFFFF"
+            role_color = "rgba(255,255,255,0.88)"
+            role_text = "你"
+        elif role == "assistant":
+            self.setStyleSheet(
+                "QFrame { background: #FFFFFF; border: 1px solid #E0E7FF; border-radius: 14px; }"
+            )
+            body_color = "#1B2138"
+            role_color = "#6366F1"
+            role_text = "助手"
+        else:
+            self.setStyleSheet(
+                "QFrame { background: #F8FAFC; border: 1px solid #E2E8F4; border-radius: 14px; }"
+            )
+            body_color = "#475569"
+            role_color = "#94A3B8"
+            role_text = "系统"
+
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 9, 12, 9)
+        layout.setContentsMargins(14, 10, 14, 10)
         layout.setSpacing(4)
 
-        role_label = QLabel("你" if role == "user" else ("助手" if role == "assistant" else "系统"))
-        role_label.setObjectName("BubbleRole")
+        role_label = QLabel(role_text)
+        role_label.setStyleSheet(
+            f"color: {role_color}; font-size: 12px; font-weight: 800; "
+            "letter-spacing: 0.5px; background: transparent;"
+        )
         layout.addWidget(role_label)
 
         self.body = QLabel(text)
         self.body.setWordWrap(True)
         self.body.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.body.setStyleSheet(
+            f"color: {body_color}; font-size: 15px; background: transparent;"
+        )
         layout.addWidget(self.body)
 
     def append_text(self, more: str) -> None:
