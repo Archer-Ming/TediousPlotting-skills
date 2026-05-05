@@ -1,5 +1,17 @@
-<table>
-  <tr>
+
+
+
+# TediousPlotting-Skills
+
+---
+
+Just clone this into Claude Code and use it as a skill! Want to test it? Try the **miniAgent** mentioned above – just clone it locally and connect your API, it supports domestic models like DeepSeek. More templates are continuously being improved, and I’d be very happy if you could provide suggestions for this skill!
+
+**你只要将其clone到claude code作为skill即可使用！**
+
+`<table>`
+
+<tr>
     <td><img src="example\e1.png" width="300"></td>
     <td><img src="example\e2.png" width="300"></td>
   </tr>
