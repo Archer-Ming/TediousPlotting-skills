@@ -10,6 +10,32 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 
 **你只要将其clone到claude code作为skill即可使用**
 
+<table>
+  <tr>
+    <td><img src="example\f1.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f2.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f3.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f4.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f5.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f6.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f7.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f8.png" width="800"></td>
+  </tr>
+</table>
 
 <img src="example\e8.png" width="800">
 
