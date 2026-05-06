@@ -6,9 +6,9 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 
 **你只要将其clone到claude code作为skill即可使用！**
 
-<img src="example\e8.png" width="400">
+<img src="example\e8.png" width="800">
 
-<img src="example\e11.png" width="300">
+<img src="example\e11.png" width="800">
 
 <table>
   <tr>
