@@ -1,10 +1,11 @@
 # TediousPlotting-Skills
 
 ---
-
+## 更多绘图持续蒸馏中...
+用不起国外大模型？ 试试这个skill！，将高性能付费ai的绘图逻辑蒸馏成一份可在任意ai进行绘制的技能
 Just clone this into Claude Code and use it as a skill! Want to test it? Try the **miniAgent** mentioned above – just clone it locally and connect your API, it supports domestic models like DeepSeek. More templates are continuously being improved, and I’d be very happy if you could provide suggestions for this skill!
 
-**你只要将其clone到claude code作为skill即可使用！**
+**你只要将其clone到claude code作为skill即可使用**
 
 <img src="example\e8.png" width="800">
 
