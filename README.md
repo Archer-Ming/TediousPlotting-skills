@@ -6,9 +6,9 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 
 **你只要将其clone到claude code作为skill即可使用！**
 
-![d](example\e8.png)
+![](example\e8.png)
 
-![d](example\e11.png)
+![](example\e11.png)
 
 <table>
   <tr>
