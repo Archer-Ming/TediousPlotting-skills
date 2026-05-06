@@ -526,3 +526,71 @@ ax.set_title('(d) Arc diagram', loc='left',
 plt.show()
 
 ```
+
+#### 回归诊断
+
+```
+#-----------第一部分代码------------
+#--------draw--------
+fig = plt.figure(figsize=FIGSIZE)
+gs = GridSpec(1, 4, figure=fig, wspace=0.32)
+
+n = 100
+x = rng.uniform(0, 10, n)
+y = 2*x + 3 + rng.normal(0, 1.5, n) + 0.05*x**2  # slight nonlinearity
+coef = np.polyfit(x, y, 1)
+yhat = np.polyval(coef, x); resid = y - yhat
+standardized = resid / resid.std()
+
+# (a) fit + CI
+ax = fig.add_subplot(gs[0])
+sns.regplot(x=x, y=y, ax=ax, color=C[0],
+            scatter_kws={'s': 22, 'alpha': 0.6, 'edgecolor': 'white', 'linewidths': 0.4},
+            line_kws={'color': C[3], 'lw': 2})
+r, _ = stats.pearsonr(x, y)
+ax.text(0.04, 0.96, f'y = {coef[0]:.2f}x + {coef[1]:.2f}\nr = {r:.3f}',
+        transform=ax.transAxes, va='top', fontsize=8,
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
+ax.set_xlabel('X'); ax.set_ylabel('Y')
+panel(ax, 'a', 'Regression fit + 95% CI')
+
+# (b) residuals vs fitted
+ax = fig.add_subplot(gs[1])
+ax.scatter(yhat, resid, s=22, color=C[0], alpha=0.6,
+           edgecolor='white', linewidths=0.4)
+ax.axhline(0, color=C[3], lw=1.2)
+# lowess-like smooth
+order = np.argsort(yhat)
+smooth = pd.Series(resid[order]).rolling(15, center=True).mean()
+ax.plot(yhat[order], smooth, color='black', lw=1.5, alpha=0.8, label='Trend')
+ax.set_xlabel('Fitted values'); ax.set_ylabel('Residuals')
+ax.legend(frameon=False, fontsize=7)
+panel(ax, 'b', 'Residuals vs fitted')
+
+# (c) Q-Q plot
+ax = fig.add_subplot(gs[2])
+stats.probplot(standardized, dist='norm', plot=ax)
+ax.get_lines()[0].set_color(C[0]); ax.get_lines()[0].set_marker('o'); ax.get_lines()[0].set_markersize(4)
+ax.get_lines()[1].set_color(C[3]); ax.get_lines()[1].set_linewidth(1.5)
+ax.set_xlabel('Theoretical quantiles'); ax.set_ylabel('Standardized residuals')
+ax.set_title('')  # clear scipy default title
+panel(ax, 'c', 'Normal Q-Q')
+
+# (d) leverage / Cook's distance (visual proxy)
+ax = fig.add_subplot(gs[3])
+# leverage approx: h_ii from hat matrix for simple linear: 1/n + (x-mean)^2/Sxx
+Sxx = np.sum((x - x.mean())**2)
+h = 1/n + (x - x.mean())**2/Sxx
+cook = (standardized**2 / 2) * (h / (1 - h))
+sc = ax.scatter(h, standardized, s=cook*200 + 10, c=cook,
+                cmap='Reds', alpha=0.75, edgecolor='black', linewidths=0.5)
+ax.axhline(0, color='gray', lw=0.7, ls='--')
+ax.axhline(2, color='gray', lw=0.7, ls='--')
+ax.axhline(-2, color='gray', lw=0.7, ls='--')
+fig.colorbar(sc, ax=ax, shrink=0.85, pad=0.02, label="Cook's D")
+ax.set_xlabel('Leverage'); ax.set_ylabel('Standardized residuals')
+panel(ax, 'd', "Leverage + Cook's distance")
+
+plt.show()
+
+```
