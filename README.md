@@ -38,6 +38,12 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
   <tr>
     <td><img src="example\f8.png" width="800"></td>
   </tr>
+  <tr>
+    <td><img src="example\f9.png" width="800"></td>
+  </tr>
+  <tr>
+    <td><img src="example\f10.png" width="800"></td>
+  </tr>
 </table>
 
 <img src="example\e8.png" width="800">
