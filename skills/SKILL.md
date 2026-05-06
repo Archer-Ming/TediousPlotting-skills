@@ -60,11 +60,11 @@ colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D',"#649fca", "#c68f5f", "#63b
 
 ### 参考模板 Python
 
-|             参考文件             | 何时需要                                                                  |
-| :------------------------------: | ------------------------------------------------------------------------- |
-|    reference\bar_line_box.md    | 当用户需要绘制柱状图，折线图，箱线图以及变体，复合图表                    |
-| reference\scatter_violin_heat.md | 当用户需要绘制散点图，小提琴图，KDE核密度曲线图，热力图以及变体，复合图表 |
-|  reference\3Dsurface_joy_ROC.md  | 当用户需要绘制3D曲面，joy图，混淆矩阵，ROC曲线以及变体，复合图表          |
+|                             参考文件                             | 何时需要                                                                  |
+| :---------------------------------------------------------------: | ------------------------------------------------------------------------- |
+|        [reference\bar0line0box.md](reference\bar_line_box.md)        | 当用户需要绘制柱状图，折线图，箱线图以及变体，复合图表                    |
+| [reference\scatter0violin0heat.md](reference\scatter_violin_heat.md) | 当用户需要绘制散点图，小提琴图，KDE核密度曲线图，热力图以及变体，复合图表 |
+|   [reference\3Dsurface_joy_ROC.md](reference\3Dsurface_joy_ROC.md)   | 当用户需要绘制3D曲面，joy图，混淆矩阵，ROC曲线以及变体，复合图表          |
 
 ### 输入格式
 
