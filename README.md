@@ -2,7 +2,7 @@
 
 ---
 
-### 更多绘图持续蒸馏中...
+## 更多绘图持续蒸馏中...
 
 AI绘制的图老达不到理想？
 国外大模型太费token？
@@ -16,7 +16,7 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 
 ---
 
-### **快速体验**
+## **快速体验**
 
 快速使用简易网页**miniAgent**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
 
