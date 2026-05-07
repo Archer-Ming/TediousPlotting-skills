@@ -20,7 +20,7 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 
 快速使用简易网页**miniAgent**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
 
-[./miniAgent\miniAgent.html](./miniAgent\miniAgent.html)
+[miniAgent\miniAgent.html](miniAgent\miniAgent.html)
 
 <table>
   <tr>
