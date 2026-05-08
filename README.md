@@ -33,7 +33,7 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 *具体说明参考见：*
 [miniAgent\README.md](miniAgent\README.md)
 
-*miniAgent*
+*miniAgent：*
 [miniAgent\miniAgent.html](miniAgent\miniAgent.html)
 
 <table>
