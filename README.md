@@ -31,7 +31,9 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 或者使用我们开发的简易网页 ***miniAgent*（它有点简陋但足以支撑skills测试和体验！）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
 
 *具体说明参考见：*
+[miniAgent\README.md](miniAgent\README.md)
 
+*miniAgent*
 [miniAgent\miniAgent.html](miniAgent\miniAgent.html)
 
 <table>
