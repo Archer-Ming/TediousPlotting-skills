@@ -6,21 +6,31 @@
 
 AI绘制的图老达不到理想？
 国外大模型太费token？
-需求与出图相违背？
+需求与出图相违背？      
 
-试试这个skill！将高质量期刊级别图表以及高性能ai的绘图逻辑联合蒸馏成的一份可在本地agent/claw进行绘制的技能
+试试这个skill！一份将高质量期刊级别图表以及高性能ai的绘图逻辑联合蒸馏成的一份可在本地agent/claw进行绘制的技能。
 
-***它可以用在你的论文，竞赛，甚至PPT***
+***它可以用在你的论文，竞赛，PPT等***
 
 Just clone this into Claude Code and use it as a skill! Want to test it? Try the **miniAgent** mentioned above – just clone it locally and connect your API, it supports domestic models like DeepSeek. More templates are continuously being improved, and I’d be very happy if you could provide suggestions for this skill!
 
-**如果有claude code,你只要将其clone作为skill即可使用**
+---
+
+## **特色**
+
+    它严格规范了期刊的图表参数设置,配色,风格；并提供了大量从简单到多图层复合图表模板。
+
+    规范了输入输出格式以及自检项，大幅度降低了Agent绘图时消耗无关紧要的token，确保了输出所需的高质量配图。
 
 ---
 
 ## **快速体验**
 
-快速使用简易网页**miniAgent**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
+**将本项目skills.md克隆并在  *cluade code*  等Agent产品里添加即可使用**
+
+或者使用我们开发的简易网页 ***miniAgent*（它有点简陋但足以支撑skills测试和体验！）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
+
+*具体说明参考见：*
 
 [miniAgent\miniAgent.html](miniAgent\miniAgent.html)
 
@@ -55,17 +65,10 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
   <tr>
     <td><img src="example\f10.png" width="800"></td>
   </tr>
-</table>
-
-<img src="example\e8.png" width="800">
-
-<table>
   <tr>
-    <td><img src="example\e1.png" width="300"></td>
-    <td><img src="example\e9.png" width="300"></td>
-  </tr>
+    <td><img src="example\f11.png" width="800"></td>
+  </tr>  
   <tr>
-    <td><img src="example\e3.png" width="300"></td>
-    <td><img src="example\e4.png" width="300"></td>
-  </tr>
+    <td><img src="example\e8.png" width="800"></td>
+  </tr>  
 </table>
