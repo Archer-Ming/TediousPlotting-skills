@@ -20,4 +20,7 @@
   <tr>
     <td><img src="assets\教程3.png" width="800"></td>
   </tr>
+  <tr>
+    <td><img src="assets\教程4.png" width="800"></td>
+  </tr> 
 </table>
