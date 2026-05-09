@@ -6,7 +6,7 @@
 
 AI绘制的图老达不到理想？
 国外大模型太费token？
-需求与出图相违背？      
+需求与出图相违背？
 
 试试这个skill！一份将高质量期刊级别图表以及高性能ai的绘图逻辑联合蒸馏成的一份可在本地agent/claw进行绘制的技能。
 
@@ -26,7 +26,7 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
 
 ## **快速体验**
 
-**将本项目skills.md克隆并在  *cluade code*  等Agent产品里添加即可使用**
+**将本项目skills文件克隆并在  *cluade code*  等Agent产品里添加即可使用**
 
 或者使用我们开发的简易网页 ***miniAgent*（它有点简陋但足以支撑skills测试和体验！）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
 
