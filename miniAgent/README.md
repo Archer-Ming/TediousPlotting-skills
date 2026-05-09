@@ -4,6 +4,14 @@
 
 ## 简介
 
+**大模型配置项：**
+
+    Deepseek  OpenAI
+
+**沙箱Tools：**
+
+   Pyodide
+
 <td><img src="assets\介绍1.png" width="800">
 
 ---

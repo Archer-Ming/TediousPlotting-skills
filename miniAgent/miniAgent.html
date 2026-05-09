@@ -296,6 +296,58 @@ input, textarea, select {
     margin-top: 6px;
     line-height: 1.4;
 }
+.ref-box {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: white;
+    border: 1px dashed var(--secondary-border);
+    border-radius: 10px;
+}
+.ref-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.ref-title {
+    color: var(--primary-deep);
+    font-size: 13px;
+    font-weight: 800;
+}
+.ref-empty {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 6px;
+    line-height: 1.45;
+}
+.ref-list {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.ref-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    background: var(--skill-card-bg);
+    font-size: 12px;
+}
+.ref-item:hover { background: var(--secondary-bg); }
+.ref-name {
+    flex: 1;
+    color: var(--text);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ref-size {
+    color: var(--text-muted);
+    font-size: 11px;
+}
 .coming-soon-tag {
     color: var(--warn-fg);
     background: var(--warn-bg);
@@ -1058,6 +1110,7 @@ A,Control,1.2"></textarea>
 
 <!-- 隐藏的文件 input -->
 <input type="file" id="fileSkill" accept=".md,.markdown,.txt" style="display:none" />
+<input type="file" id="fileRef" accept=".md,.markdown,.txt" multiple style="display:none" />
 <input type="file" id="fileData" accept=".csv,.txt,.xlsx,.xls,.json" style="display:none" />
 
 <!-- toast 容器 -->
@@ -1172,6 +1225,7 @@ const Skills = {
             const raw = localStorage.getItem(this.KEY);
             if (raw) this.list = JSON.parse(raw) || [];
         } catch (e) { this.list = []; }
+        this._migrate();
     },
     save() {
         try { localStorage.setItem(this.KEY, JSON.stringify(this.list)); }
@@ -1214,12 +1268,13 @@ const Skills = {
 
     addFromText(text, sourceName = "uploaded.md") {
         const { name, description, body } = this.parse(text, sourceName.replace(/\.[^.]+$/, ""));
-        // 去重:相同 source_name 则刷新
+        // 去重:相同 source_name 则刷新(保留 references)
         const existing = this.list.find(s => s.source_name === sourceName);
         if (existing) {
             existing.name = name;
             existing.description = description;
             existing.body = body;
+            if (!existing.references) existing.references = {};
             this.save();
             return existing;
         }
@@ -1228,10 +1283,56 @@ const Skills = {
             name, description, body,
             source_name: sourceName,
             enabled: true,
+            references: {},   // {filename: text}  按需加载的模板文件
         };
         this.list.push(sk);
         this.save();
         return sk;
+    },
+
+    /** 给某个 Skill 追加一个参考文件。filename 用基本名(不含路径) */
+    addReference(skillId, filename, text) {
+        const sk = this.list.find(s => s.id === skillId);
+        if (!sk) throw new Error("Skill 不存在");
+        if (!sk.references) sk.references = {};
+        const base = String(filename).split(/[/\\]/).pop();
+        sk.references[base] = text;
+        this.save();
+        return base;
+    },
+
+    removeReference(skillId, filename) {
+        const sk = this.list.find(s => s.id === skillId);
+        if (!sk || !sk.references) return;
+        delete sk.references[filename];
+        this.save();
+    },
+
+    /** 在所有启用的 skill 里按 basename 找一个参考文件 */
+    findReference(filename) {
+        const target = String(filename).split(/[/\\]/).pop().toLowerCase();
+        for (const sk of this.list) {
+            if (!sk.enabled || !sk.references) continue;
+            for (const [k, v] of Object.entries(sk.references)) {
+                if (k.toLowerCase() === target) return { skill: sk, filename: k, content: v };
+            }
+            // 容错:用户可能写了不带扩展名/不同扩展名
+            for (const [k, v] of Object.entries(sk.references)) {
+                const kBase = k.toLowerCase().replace(/\.[^.]+$/, "");
+                const tBase = target.replace(/\.[^.]+$/, "");
+                if (kBase === tBase) return { skill: sk, filename: k, content: v };
+            }
+        }
+        return null;
+    },
+
+    /** 兼容旧数据:加载后给每个 skill 补 references */
+    _migrate() {
+        let dirty = false;
+        for (const sk of this.list) {
+            if (!sk.references) { sk.references = {}; dirty = true; }
+        }
+        if (dirty) this.save();
     },
 
     setEnabled(id, enabled) {
@@ -1244,13 +1345,29 @@ const Skills = {
     },
     enabled() { return this.list.filter(s => s.enabled); },
 
-    /** 注入到 system prompt 的整块 */
+    /** 注入到 system prompt 的整块。
+     *  references 只列出"目录"(文件名 + 摘要),正文不直接注入,
+     *  让 LLM 通过 read_template 工具按需获取。
+     */
     buildPromptSection() {
         const en = this.enabled();
         if (!en.length) return "";
-        const blocks = en.map(s =>
-            `<skill name="${s.name}">\n<description>${s.description}</description>\n<content>\n${s.body.trim()}\n</content>\n</skill>`
-        ).join("\n\n");
+        const blocks = en.map(s => {
+            const refNames = Object.keys(s.references || {});
+            let refIndex = "";
+            if (refNames.length) {
+                const items = refNames.map(fn => `  - ${fn}`).join("\n");
+                refIndex = `\n<references>
+本技能附带 ${refNames.length} 份参考模板文件(已存放在本地,可按需读取,不会自动注入到上下文):
+${items}
+当你判断某份模板与当前任务相关时,**必须**在回复中输出形如:
+{"kind": "read_template", "filename": "对应文件名", "message": "为什么需要它"}
+系统会把该文件正文返回给你,然后再继续生成绘图代码。
+不要凭空记忆模板内容,以本地实际文件为准。
+</references>`;
+            }
+            return `<skill name="${s.name}">\n<description>${s.description}</description>\n<content>\n${s.body.trim()}\n</content>${refIndex}\n</skill>`;
+        }).join("\n\n");
         return `<skills>
 下面是当前激活的专业技能文档,请严格遵守其中规则与模板。
 ${blocks}
@@ -1264,94 +1381,58 @@ ${blocks}
  * =========================================================================== */
 const DEFAULT_SKILL_TEXT = `---
 name: 专业绘图技能
-description: 专业的科研绘图技能,包含箱线图、柱状图等各种常见图形可视化绘制。
+description: 专业的科研绘图技能,包含箱线图、柱状图、散点图、热力图、3D 图、ROC 曲线等各种科研图表;严格遵循固定的科研配色与字体规范,产出符合期刊投稿质量的可视化图表。
 ---
 
 ### 重要规则!
 
-* 绘图严格按照以下模板代码来进行绘制,不得凭空捏造,除非用户提及的话语意思为延申扩展之类的,你才能在模板代码基础上适当延申。
-* 对于用户提供的数据,名称等,按具体情况进行修正,比如:中文就对应 SimHei 等,确保生成的图不要有乱码。
-* 如果可视化的图不符合预期,请自己去找出问题并重新绘制,直到达到预期。
-* 模板代码提供的只是给你的模仿参考,里面的 x/y 坐标数据、对数据的处理读取、标题名称都请忽略,你要做的是学习模板的绘图逻辑、绘图风格、功能亮点。
-* 有些模板里面是多种类型图的整合,你学习完后必须按照用户需求选择性绘制。
-* 对于用户提及的可视化需求并不在模板里面的,你要按照在我这些模板中学习到的绘图风格,模仿并自主绘制适合用户需求的可视化配图。
+* 绘图严格遵守"前提"中给出的 rcParams 与配色调色板,不要自己换色或换字号。
+* 数据中的列名/标题保持原文(中文用 SimHei,英文用 Times New Roman),不要乱码。
+* 模板代码里的样例数据、列名、标题请忽略,你要学的是它的绘图逻辑、风格和图层组合。
+* 模板里第一部分是从简单到复杂的 4 张子图,其他部分是复合图;按用户需求选择性使用。
+* 每次绘图前,**必须**先调用 read_template 把对应模板加载进来,再生成代码。
 
 ### 前提
 
 ⚠️ 用户没明说图表类型时,先简短确认再画。
 
-科研级 rcParams:
 \`\`\`python
-import matplotlib.pyplot as plt
-plt.rcParams['font.family'] = 'serif'
-plt.rcParams['font.serif'] = ['Times New Roman', 'SimHei', 'DejaVu Serif']
-plt.rcParams['axes.unicode_minus'] = False
-plt.rcParams['figure.dpi'] = 200
-plt.rcParams['axes.labelsize'] = 12
-plt.rcParams['xtick.labelsize'] = 10
-plt.rcParams['ytick.labelsize'] = 10
-plt.rcParams['legend.fontsize'] = 10
-plt.rcParams['axes.linewidth'] = 0.8
+plt.rcParams.update({
+    'font.size': 14, 'axes.labelsize': 18, 'axes.titlesize': 16,
+    'xtick.labelsize': 16, 'ytick.labelsize': 16, 'legend.fontsize': 12,
+    'figure.dpi': 200, 'axes.linewidth': 1.2,
+    'xtick.major.width': 1.2, 'ytick.major.width': 1.2,
+    'xtick.major.size': 6, 'ytick.major.size': 6,
+    'axes.unicode_minus': False,
+})
+colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D',
+          '#649fca', '#c68f5f', '#63bd63', '#D05E5E', '#8F51C8']
 \`\`\`
 
-科研常见配色:
-\`\`\`python
-colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D', '#649fca', '#c68f5f', '#63bd63', '#D05E5E', '#8F51C8']
-\`\`\`
+Figure size 建议:
+- 折线/柱状/箱线/小提琴等横板单图:(12,8) 或 (10,6)
+- 饼图/热力图/3D 等正方形:(8-12, 8-12)
+- 多子图:(12-22, 5-15)
 
-### 模板
+### 参考模板(按需读取)
 
-#### 柱状图
-\`\`\`python
-fig, ax = plt.subplots(figsize=(10, 5))
-x = np.arange(len(labels))
-ax.bar(x, values, color=colors[:len(values)], edgecolor='black')
-for i, v in enumerate(values):
-    ax.text(i, v + 0.005, f'{v:.3f}', ha='center', va='bottom', fontsize=8)
-ax.set_xticks(x); ax.set_xticklabels(labels, rotation=0)
-ax.set_ylabel('Value', fontweight='bold')
-ax.set_ylim(0, max(values) * 1.2)
-plt.tight_layout()
-\`\`\`
+| 模板文件 | 何时打开 |
+|---|---|
+| scatter_bar_line_box.md | 散点图、柱状图、折线图、箱线图及变体/复合 |
+| heat_pie_histogram_radar.md | 热力图、饼图、直方图、雷达图及变体/复合 |
+| 3Dplot_joy_ROC_flow_error.md | 3D 曲面、joy 图、ROC、混淆矩阵、误差棒、流场图等 |
 
-#### 箱线图+小提琴图
-\`\`\`python
-fig, ax = plt.subplots(figsize=(10, 5))
-sns.violinplot(data=plot_df, x='Direction', y='Value', palette=colors, inner=None, alpha=0.5, ax=ax)
-sns.boxplot(data=plot_df, x='Direction', y='Value', width=0.15,
-            boxprops=dict(facecolor='white', edgecolor='black'),
-            medianprops=dict(color='red', linewidth=2),
-            showfliers=False, ax=ax)
-sns.stripplot(data=plot_df, x='Direction', y='Value', palette=colors, jitter=0.25, size=4, ax=ax)
-plt.tight_layout()
-\`\`\`
-
-#### 折线图
-\`\`\`python
-fig, ax = plt.subplots(figsize=(8, 5))
-for i, group in enumerate(groups):
-    ax.errorbar(x, means[group], yerr=stds[group], color=colors[i],
-                marker='o', linewidth=2, capsize=3, label=group)
-ax.set_xlabel('X'); ax.set_ylabel('Y'); ax.legend()
-plt.tight_layout()
-\`\`\`
-
-#### 热力图
-\`\`\`python
-fig, ax = plt.subplots(figsize=(8, 7))
-sns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', center=0,
-            linewidths=0.5, cbar_kws={'shrink': 0.8}, ax=ax)
-plt.tight_layout()
-\`\`\`
+判定到要画上面任意一类图时,先发 \`read_template\` 把对应模板读进来,再写 code。
+不要凭印象写模板代码,以本地文件为准。
 
 ### 出图前自检
 
-- [ ] 字体无乱码(中文必须含 SimHei)
-- [ ] 标签不重叠
-- [ ] 色阶适配数据
-- [ ] y 轴预留 ≥15% 空间放数值标签
-- [ ] 图例不遮挡数据
-- [ ] 配色取自 colors 调色板
+- 字体无乱码(中文用 SimHei/Noto Sans CJK)
+- 标签不重叠,tick 旋转角度合理
+- y 轴留白 ≥15% 给数值标签
+- 图例不遮挡数据
+- 配色取自上方调色板,没有用 matplotlib 默认色
+- 一张图只一张主图(可包含 subplots)
 `;
 
 
@@ -1367,24 +1448,128 @@ const DataProject = {
 
     get loaded() { return this.columns.length > 0 && this.rowsObj.length > 0; },
 
-    /** 读 CSV/TSV 文本 */
+    /** 读 CSV/TSV 文本
+     *
+     *  与 xlsx 同样的策略:用无 header 模式自己组装,避免空 header 把整列吞掉。
+     */
     loadCSVText(text, name = "csv") {
-        const parsed = Papa.parse(text.trim(), { header: true, skipEmptyLines: true, dynamicTyping: true });
-        if (parsed.errors && parsed.errors.length) {
-            // 不致命,继续
+        const parsed = Papa.parse(text.trim(), {
+            header: false,
+            skipEmptyLines: true,
+            dynamicTyping: true,
+        });
+        const matrix = parsed.data || [];
+        if (!matrix.length) {
+            this._setData(name, [], []);
+            return;
         }
-        const data = parsed.data;
-        const cols = parsed.meta.fields || [];
-        this._setData(name, cols.map(c => String(c).trim()), data);
+        let width = 0;
+        for (const row of matrix) if (Array.isArray(row) && row.length > width) width = row.length;
+        const rawHeader = matrix[0] || [];
+        const seen = new Map();
+        const cols = [];
+        for (let i = 0; i < width; i++) {
+            let h = rawHeader[i];
+            if (h === null || h === undefined) h = "";
+            h = String(h).trim();
+            if (!h) h = `column_${i + 1}`;
+            if (seen.has(h)) { const n = seen.get(h) + 1; seen.set(h, n); h = `${h}_${n}`; }
+            else seen.set(h, 1);
+            cols.push(h);
+        }
+        const rowsObj = [];
+        for (let r = 1; r < matrix.length; r++) {
+            const row = matrix[r] || [];
+            const o = {};
+            let hasAny = false;
+            for (let c = 0; c < width; c++) {
+                let v = row[c];
+                if (v === undefined) v = null;
+                o[cols[c]] = v;
+                if (v !== null && v !== "") hasAny = true;
+            }
+            if (hasAny) rowsObj.push(o);
+        }
+        this._setData(name, cols, rowsObj);
     },
 
-    /** 读 Excel ArrayBuffer */
+    /** 读 Excel ArrayBuffer
+     *
+     *  注意:不能再用 sheet_to_json 默认模式!
+     *  那个模式会:
+     *    1) 跳过空 header 单元格 -> 整列丢失
+     *    2) 用 json[0] 取列名时,若该列前面行都是空,该列会被吞
+     *  改成 header:1 拿到二维数组,然后我们自己装 records,保证列不丢。
+     */
     loadXLSXBuffer(buf, name = "xlsx") {
-        const wb = XLSX.read(buf, { type: "array" });
+        const wb = XLSX.read(buf, { type: "array", cellDates: true });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(ws, { defval: null });
-        const cols = json.length ? Object.keys(json[0]) : [];
-        this._setData(name, cols, json);
+        if (!ws) throw new Error("工作簿为空,未找到任何工作表");
+
+        // 二维数组模式:row[0] 一定是表头行;defval 让空单元格成 null 而非缺失
+        const matrix = XLSX.utils.sheet_to_json(ws, {
+            header: 1,
+            defval: null,
+            raw: false,    // 让日期等被格式化成字符串,避免出现奇怪的 Date 对象
+            blankrows: false,
+        });
+        if (!matrix.length) {
+            this._setData(name, [], []);
+            return;
+        }
+
+        // 算出真实列宽:取所有行的最大长度,防止表头有空被截断
+        let width = 0;
+        for (const row of matrix) {
+            if (Array.isArray(row) && row.length > width) width = row.length;
+        }
+        if (width === 0) {
+            this._setData(name, [], []);
+            return;
+        }
+
+        // 表头处理:空格清洗 + 重名/空名补全
+        const rawHeader = matrix[0] || [];
+        const seen = new Map();
+        const cols = [];
+        for (let i = 0; i < width; i++) {
+            let h = rawHeader[i];
+            if (h === null || h === undefined) h = "";
+            h = String(h).trim();
+            if (!h) h = `column_${i + 1}`;
+            // 同名列加序号,避免覆盖
+            if (seen.has(h)) {
+                const n = seen.get(h) + 1;
+                seen.set(h, n);
+                h = `${h}_${n}`;
+            } else {
+                seen.set(h, 1);
+            }
+            cols.push(h);
+        }
+
+        // 数据行 -> records
+        const rowsObj = [];
+        for (let r = 1; r < matrix.length; r++) {
+            const row = matrix[r] || [];
+            const o = {};
+            let hasAny = false;
+            for (let c = 0; c < width; c++) {
+                let v = row[c];
+                if (v === undefined) v = null;
+                // raw:false 会把数字也变字符串,这里做轻量数字回写
+                if (typeof v === "string") {
+                    const t = v.trim();
+                    if (t !== "" && t !== "-" && !isNaN(Number(t)) && /^-?\d/.test(t)) {
+                        v = Number(t);
+                    }
+                }
+                o[cols[c]] = v;
+                if (v !== null && v !== "") hasAny = true;
+            }
+            if (hasAny) rowsObj.push(o);
+        }
+        this._setData(name, cols, rowsObj);
     },
 
     /** 读 JSON 文本 */
@@ -1485,6 +1670,41 @@ except Exception:
             } catch (e) {
                 console.warn("seaborn 装载失败,后续若不需要可忽略:", e);
             }
+
+            // 中文字体注入:从 jsDelivr 下载 Noto Sans SC,避免中文豆腐块。
+            // 失败也不影响纯英文场景。
+            try {
+                updateLLMStatusLine("正在准备中文字体…");
+                const fontUrls = [
+                    "https://cdn.jsdelivr.net/gh/notofonts/noto-cjk@main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf",
+                    "https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.0.5/files/noto-sans-sc-chinese-simplified-400-normal.woff",
+                ];
+                let fontBytes = null;
+                for (const url of fontUrls) {
+                    try {
+                        const r = await fetch(url, { cache: "force-cache" });
+                        if (r.ok) {
+                            fontBytes = new Uint8Array(await r.arrayBuffer());
+                            break;
+                        }
+                    } catch (_) { /* try next */ }
+                }
+                if (fontBytes && fontBytes.length > 1000) {
+                    this.pyodide.FS.writeFile("/cjk.otf", fontBytes);
+                    await this.pyodide.runPythonAsync(`
+import matplotlib
+from matplotlib import font_manager
+try:
+    font_manager.fontManager.addfont("/cjk.otf")
+    _cjk_loaded = True
+except Exception:
+    _cjk_loaded = False
+                    `);
+                }
+            } catch (e) {
+                console.warn("中文字体注入失败,继续:", e);
+            }
+
             this.ready = true;
             updateLLMStatusLine();
             return this.pyodide;
@@ -1512,13 +1732,22 @@ try:
 except Exception:
     sns = None
 
-# 中文字体兜底:Pyodide 自带的 matplotlib 没有 SimHei,
-# 强行设置只会警告。这里仅做无副作用的兜底 family,中文会用 DejaVu fallback。
+# 中文字体兜底:启动时已经尝试把 Noto Sans CJK SC 注册进 font_manager。
+# 这里把它加到 sans-serif/serif 列表最前面,真正解决中文豆腐块。
 try:
     from matplotlib import rcParams
+    from matplotlib import font_manager
     rcParams['axes.unicode_minus'] = False
-    rcParams['font.family'] = 'sans-serif'
-    rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
+    cjk_names = []
+    for f in font_manager.fontManager.ttflist:
+        nm = (getattr(f, 'name', '') or '').lower()
+        if 'noto sans cjk' in nm or 'noto sans sc' in nm or 'simhei' in nm or 'cjk' in nm:
+            cjk_names.append(f.name)
+            break
+    cjk_names = list(dict.fromkeys(cjk_names))
+    rcParams['font.sans-serif'] = cjk_names + ['SimHei', 'DejaVu Sans', 'sans-serif']
+    rcParams['font.serif']     = cjk_names + ['SimHei', 'DejaVu Serif', 'serif']
+    rcParams['font.family']    = 'sans-serif'
 except Exception:
     pass
 
@@ -1612,24 +1841,32 @@ const Agent = {
 
 【输出格式 - 重要】
 你的每次回复**必须**是一个严格的 JSON 对象,不要使用 Markdown 代码块包裹整个 JSON,不要写任何解释性前缀或后缀。
-JSON 字段:
-- "kind": "code" 表示要绘图,"answer" 表示纯文字回答。
-- "message": 给用户看的简短中文说明(例如:选择了什么图,为什么这样选)。
+JSON 字段(根据 kind 选择字段):
+- "kind": "code" / "answer" / "read_template" 三选一。
+- "message": 给用户看的简短中文说明(始终需要)。
 - "code": 当 kind=="code" 时必填。一段完整可独立运行的 Python 代码字符串。
+- "filename": 当 kind=="read_template" 时必填。要读取的参考文件名(取自 <references> 列表)。
+
+【何时使用 read_template】
+当你即将开始生成一段绘图代码,而 <references> 中存在与该图表类型对应的模板文件时,
+**必须**先返回 read_template,把对应文件读到上下文,再在下一轮基于真实模板正文生成 code。
+绝不允许凭印象生成模板里的代码;每次绘图前都要确认你已读到匹配的模板。
+若任务很简单(如纯文字回答),或没有匹配模板,可跳过此步,直接 code 或 answer。
 
 【代码编写规则】
 1. 用户的 DataFrame 已经预加载为变量 \`df\`,直接使用,不要 read_csv / read_excel。
 2. 已可用的库:matplotlib.pyplot as plt、numpy as np、pandas as pd、seaborn as sns。**不要**额外 import 网络/系统/文件库。
 3. 代码末尾不要 plt.show()、plt.savefig(),沙箱会自动捕获 figure 保存为 PNG。
 4. 必须包含科研级 rcParams 设置(参见 skills 中的"前提"一节)。
-5. 浏览器版 Pyodide 中无 SimHei 字体,中文标签可能会显示为方框。如果用户数据含中文,建议在 message 中提示并用拼音/英文替代,或仅用英文标签。
+5. 浏览器版 Pyodide 中已注入 Noto Sans CJK 中文字体,可直接使用中文标签;若仍出现方框,
+   在 message 中提示并改用英文。
 6. 使用 skills 中给出的科研配色(colors 列表);优先按用户指定的图表类型套用对应模板。
 7. 对 df 列名做防御性检查:若用户提到的列不存在,从 df.columns 里挑最接近的。
 8. 一段代码只输出一张主图(可以包含 subplots)。
 
 【对话规则】
 - 当用户询问数据情况、问"适合画什么"等没有明确画图诉求时,kind="answer"。
-- 当用户明确要求绘图、修改图、迭代美化等,kind="code"。
+- 当用户明确要求绘图、修改图、迭代美化等,先 read_template(若有相关模板),再 code。
 - 用户后续要求"再修改/改成 X"时,记忆上一轮的代码,在其基础上修改而不是重新开始。
 
 ${skillBlock || "(当前未加载任何技能,按通用科研绘图规范处理。)"}
@@ -1705,21 +1942,80 @@ ${dataBlock}`;
         }
 
         const systemPrompt = this.buildSystemPrompt(df);
-        const messages = [{ role: "system", content: systemPrompt }, ...this.history];
+        // 工作消息序列:在 read_template 多轮中我们要在它末尾追加内容
+        const work = [{ role: "system", content: systemPrompt }, ...this.history];
 
-        let raw;
-        try {
-            raw = await this.callLLM(messages);
-        } catch (e) {
-            const msg = "调用大模型失败:" + e.message;
-            emit({ kind: "error", text: msg });
-            this.history.push({ role: "assistant", content: msg });
-            return { final_message: msg, success: false };
+        const MAX_READ_ROUNDS = 4;   // 最多让 LLM 读 4 份模板,防死循环
+        let raw = null;
+        let payload = null;
+        let readCount = 0;
+
+        // —— 阶段一:意图协商(可能反复 read_template) ——
+        while (true) {
+            try {
+                raw = await this.callLLM(work);
+            } catch (e) {
+                const msg = "调用大模型失败:" + e.message;
+                emit({ kind: "error", text: msg });
+                this.history.push({ role: "assistant", content: msg });
+                return { final_message: msg, success: false };
+            }
+            payload = this.parsePayload(raw);
+            const kind = payload.kind || "answer";
+
+            if (kind === "read_template") {
+                const fname = String(payload.filename || "").trim();
+                const reason = String(payload.message || "").trim();
+                emit({ kind: "thinking", text: `📖 请求读取模板:${fname}${reason ? "  ·  " + reason : ""}` });
+
+                if (!fname) {
+                    work.push({ role: "assistant", content: raw });
+                    work.push({ role: "user", content: "你的 read_template 缺少 filename 字段,请补全后重新发送。" });
+                    if (++readCount > MAX_READ_ROUNDS) break;
+                    continue;
+                }
+                const hit = Skills.findReference(fname);
+                if (!hit) {
+                    const avail = Object.keys(
+                        Skills.enabled().reduce((acc, sk) => Object.assign(acc, sk.references || {}), {})
+                    );
+                    work.push({ role: "assistant", content: raw });
+                    work.push({
+                        role: "user",
+                        content: `未找到名为 "${fname}" 的模板文件。当前可用文件:${avail.join(", ") || "(无)"}。请改用正确的文件名重新发送 read_template,或直接进入 code 阶段。`,
+                    });
+                    if (++readCount > MAX_READ_ROUNDS) break;
+                    continue;
+                }
+                emit({ kind: "thinking", text: `✅ 已加载模板 "${hit.filename}"(${hit.content.length} 字符)` });
+                work.push({ role: "assistant", content: raw });
+                work.push({
+                    role: "user",
+                    content: `<template name="${hit.filename}">\n${hit.content}\n</template>\n\n以上是你请求的模板正文。请基于它继续完成用户的绘图需求,在下一条回复里返回 kind=="code" 的 JSON。如果还需要更多模板,可以再发一次 read_template。`,
+                });
+                if (++readCount > MAX_READ_ROUNDS) {
+                    work.push({ role: "user", content: "已达到本轮模板读取上限,请直接生成 code。" });
+                    // 再 call 一次
+                    try { raw = await this.callLLM(work); }
+                    catch (e) {
+                        const msg = "调用大模型失败:" + e.message;
+                        emit({ kind: "error", text: msg });
+                        this.history.push({ role: "assistant", content: msg });
+                        return { final_message: msg, success: false };
+                    }
+                    payload = this.parsePayload(raw);
+                    break;
+                }
+                continue;
+            }
+
+            // 非 read_template,出协商循环
+            break;
         }
 
-        let payload = this.parsePayload(raw);
-        let kind = payload.kind || "answer";
-        let message = String(payload.message || "").trim();
+        // —— 阶段二:把协商结果落实成 answer 或 code ——
+        const kind = payload.kind || "answer";
+        const message = String(payload.message || "").trim();
 
         if (kind === "answer" || !payload.code) {
             const final = message || "(无内容)";
@@ -1759,7 +2055,7 @@ ${dataBlock}`;
 
             if (attempt >= this.maxRepairRounds) break;
 
-            const repairMessages = [...messages,
+            const repairMessages = [...work,
                 { role: "assistant", content: raw },
                 {
                     role: "user",
@@ -1769,7 +2065,7 @@ ${lastErr}
 完整错误尾部:
 ${(result.stderr || "").slice(-1500)}
 
-请仅返回严格 JSON,修复 code 字段中的代码并重新发送(继续使用 df 变量)。`,
+请仅返回严格 JSON,修复 code 字段中的代码并重新发送(继续使用 df 变量)。这一步不要再 read_template,直接给修好的 code。`,
                 },
             ];
             try {
@@ -1885,8 +2181,71 @@ function renderSkills() {
         if (sk.description) {
             card.appendChild(el("div", { class: "skill-card-desc", text: sk.description }));
         }
+
+        // ---- 参考模板区(渐进披露的关键 UI) ----
+        const refs = sk.references || {};
+        const refNames = Object.keys(refs);
+        const refBox = el("div", { class: "ref-box" });
+        const refHead = el("div", { class: "ref-head" });
+        refHead.appendChild(el("span", {
+            class: "ref-title",
+            text: `参考模板 (${refNames.length})`,
+        }));
+        const addRefBtn = el("button", {
+            class: "mini-link",
+            text: "＋ 添加",
+            onclick: () => triggerAddReference(sk.id),
+        });
+        refHead.appendChild(addRefBtn);
+        refBox.appendChild(refHead);
+
+        if (refNames.length === 0) {
+            refBox.appendChild(el("div", {
+                class: "ref-empty",
+                text: 'SKILL.md 引用的模板文件(如 reference\\bar_line_box.md)需要在这里上传一次,Agent 才能按需读取。',
+            }));
+        } else {
+            const ul = el("div", { class: "ref-list" });
+            for (const fn of refNames) {
+                const item = el("div", { class: "ref-item" });
+                item.appendChild(el("span", { class: "ref-name", text: fn }));
+                const sz = String(refs[fn] || "").length;
+                item.appendChild(el("span", { class: "ref-size", text: `${(sz / 1024).toFixed(1)} KB` }));
+                item.appendChild(el("button", {
+                    class: "mini-link",
+                    text: "查看",
+                    onclick: () => openRefView(fn, refs[fn]),
+                }));
+                item.appendChild(el("button", {
+                    class: "mini-link",
+                    text: "删除",
+                    onclick: () => {
+                        if (!confirm(`确定移除 ${fn}?`)) return;
+                        Skills.removeReference(sk.id, fn);
+                        renderSkills();
+                    },
+                }));
+                ul.appendChild(item);
+            }
+            refBox.appendChild(ul);
+        }
+        card.appendChild(refBox);
+
         list.appendChild(card);
     }
+}
+
+/** 触发参考文件上传(支持多选) */
+function triggerAddReference(skillId) {
+    const inp = $("#fileRef");
+    inp.dataset.skillId = skillId;
+    inp.click();
+}
+
+function openRefView(filename, content) {
+    $("#modalSkillTitle").textContent = `参考模板:${filename}`;
+    $("#modalSkillBody").textContent = content;
+    openModal("modalSkill");
 }
 
 function openSkillView(sk) {
@@ -2338,6 +2697,26 @@ $("#fileSkill").addEventListener("change", async (e) => {
     } finally {
         e.target.value = "";
     }
+});
+
+/* ============== 添加 参考模板文件(多选) ============== */
+$("#fileRef").addEventListener("change", async (e) => {
+    const skillId = e.target.dataset.skillId;
+    const files = Array.from(e.target.files || []);
+    if (!skillId || !files.length) { e.target.value = ""; return; }
+    let ok = 0;
+    for (const f of files) {
+        try {
+            const text = await f.text();
+            Skills.addReference(skillId, f.name, text);
+            ok++;
+        } catch (err) {
+            showError(`加载 ${f.name} 失败:${err.message}`);
+        }
+    }
+    renderSkills();
+    if (ok) postSystem(`已加载 ${ok} 个参考模板文件,Agent 现在可以按需读取它们。`);
+    e.target.value = "";
 });
 
 
