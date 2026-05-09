@@ -1,15 +1,15 @@
-## 包含了一系列绘图的模板
+## Contains a series of plotting templates
 
-### 重要规则！
+### Important Rules!
 
-* 每个类型的模板第一部分代码呈现的是从简单到复杂的图表，你需要渐进的去学习这些模板。
-* 每个类型的剩余部分模板代码为具体带有独特风格和设计的图表，你也要去学习这些模板。
-* 参考模板里面的样例数据的x坐标，y坐标，数据标题名称，亦或是对数据的处理读取，请严格忽略！！！
+* The first part of the code in each type of template presents charts from simple to complex. You need to learn these templates progressively.
+* The remaining template code in each type contains charts with specific unique styles and designs. You should also learn these templates.
+* For the x-coordinates, y-coordinates, data title names in the sample data of the reference templates, or the data processing/reading, please strictly ignore them!!!
 
-#### 散点图
+#### Scatter Plot
 
 ```
-#-------第一部分代码---------
+#-------Part One Code---------
 #-----draw-----
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.30)
@@ -77,13 +77,13 @@ plt.show()
 ```
 
 ```
-#散点图+箱线图+小提琴
+# Scatter + Box plot + Violin
 #----------data-----------
 groups = ['Upright', 'On-edge', 'Flat','Unified']
 plot_dfs = []
 for grp, df_src in zip(groups, [df_2, df_3, df_1,df]):
-    tmp = df_src[['冲击强度']].copy()
-    tmp = tmp.rename(columns={'冲击强度': 'Value'})
+    tmp = df_src[['Impact Strength']].copy()
+    tmp = tmp.rename(columns={'Impact Strength': 'Value'})
     tmp['Direction'] = grp
     plot_dfs.append(tmp)
 
@@ -104,7 +104,7 @@ ax = sns.violinplot(
     alpha=0.5,
     linewidth=1.2,
 )
-# 在小提琴图中央叠加箱线图
+# Overlay box plot in the center of the violin plot
 sns.boxplot(
     data=plot_df,
     x='Direction',
@@ -117,22 +117,22 @@ sns.boxplot(
     ax=ax,
     zorder=2,
 )
-# 静态文本框
+# Static text box
 plt.text(
-    x=0.5,  # 归一化x坐标：距离图左边界5%（0=最左，1=最右）
-    y=0.1,  # 归一化y坐标：距离图下边界5%（0=最下，1=最上）
-    s=f"           Data Points  \n           Outlier(Removed)  ",  # 你要输入的内容，\n换行
-    fontsize=14,  # 文本框内文字大小
-    bbox=dict(    # 配置文本框样式（核心，实现「框」的效果）
-        boxstyle="round,pad=0.5",  # 框样式：圆角+内边距
-        facecolor="white",     # 框背景色
-        edgecolor="black",          # 框边框色
-        alpha=0.8                  # 框透明度（0=完全透明，1=不透明）
+    x=0.5,  # Normalized x-coordinate: 5% from left edge of plot (0=leftmost, 1=rightmost)
+    y=0.1,  # Normalized y-coordinate: 5% from bottom edge of plot (0=bottom, 1=top)
+    s=f"           Data Points  \n           Outlier(Removed)  ",  # Content to input, \n for newline
+    fontsize=14,  # Text size inside the box
+    bbox=dict(    # Configure text box style (key for "frame" effect)
+        boxstyle="round,pad=0.5",  # Box style: rounded corners + padding
+        facecolor="white",     # Box background color
+        edgecolor="black",          # Box border color
+        alpha=0.8                  # Box transparency (0=fully transparent, 1=opaque)
     ),
-    transform=plt.gca().transAxes,  # 关键：启用归一化坐标，固定在图窗上
+    transform=plt.gca().transAxes,  # Key: enable normalized coordinates, fixed on the figure window
 
 )
-# 添加样本散点（半透明，带抖动），放在最上层
+# Add sample scatter points (semi-transparent with jitter), placed on top
 sns.stripplot(
     data=plot_df,
     x='Direction',
@@ -149,14 +149,14 @@ sns.stripplot(
 handles = [Patch(facecolor=palette[k], label=k) for k in groups]
 ax.legend(handles=handles, title='Build Orientation', loc='upper left', fontsize=14, title_fontsize=14)
 ax.set_xlabel('')
-ax.set_ylabel('冲击强度')
-plt.title('三方向冲击强度分布（小提琴 + 箱线 + 点）')
+ax.set_ylabel('Impact Strength')
+plt.title('Three-direction Impact Strength Distribution (Violin + Box + Points)')
 plt.tight_layout()
 plt.show()
 ```
 
 ```
-# 分组散点图 + 拟合线 + 95% 置信带
+# Grouped scatter + fit lines + 95% confidence band
 # --------data----------
 np.random.seed(42)
 n = 60
@@ -196,7 +196,7 @@ plt.show()
 ```
 
 ```
-#边缘分布散点 (joint plot 风)
+# Marginal distribution scatter (joint plot style)
 #---------data----------
 np.random.seed(7)
 x = np.random.normal(5, 1.5, 200)
@@ -240,7 +240,7 @@ plt.show()
 ```
 
 ```
-#Pareto 前沿散点图
+# Pareto front scatter plot
 #--------------data---------------
 rng = np.random.default_rng(15)
 n = 250
@@ -248,7 +248,7 @@ f1 = rng.uniform(0.2, 1.0, n)
 f2 = 1.0 / (f1 + 0.1) + rng.normal(0, 0.3, n) + rng.uniform(0, 0.5, n)
 cost = rng.uniform(0, 100, n)
 
-# 计算 Pareto 前沿（最小化两个目标）
+# Compute Pareto front (minimizing two objectives)
 idx = np.argsort(f1)
 f1_s, f2_s, cost_s = f1[idx], f2[idx], cost[idx]
 pareto_mask = np.ones(n, dtype=bool)
@@ -283,7 +283,7 @@ plt.show()
 ```
 
 ```
-#相关性 + 边缘分布 + 密度（4-panel）
+# Correlation + marginal distribution + density (4-panel)
 #---------------data------------------
 n = 200
 x = np.random.normal(0, 1, n)
@@ -294,7 +294,7 @@ fig = plt.figure(figsize=(12, 9))
 gs = GridSpec(3, 2, figure=fig, hspace=0.50, wspace=0.22,
               height_ratios=[1, 4, 4])
 
-# 顶部边缘直方图
+# Top marginal histograms
 ax_top1 = fig.add_subplot(gs[0, 0])
 ax_top1.hist(x, bins=25, color=SCI_COLORS[0], edgecolor='white', alpha=0.85)
 ax_top1.set_xticks([]); ax_top1.set_yticks([])
@@ -307,7 +307,7 @@ ax_top2.set_xticks([]); ax_top2.set_yticks([])
 for s in ['top', 'right', 'left']:
     ax_top2.spines[s].set_visible(False)
 
-# 第二行：带置信带的回归散点
+# Second row: regression scatter with confidence band
 ax1 = fig.add_subplot(gs[1, 0])
 sns.regplot(x=x, y=y, ax=ax1, color=SCI_COLORS[0],
             scatter_kws={'s': 28, 'alpha': 0.65, 'edgecolor': 'white', 'linewidths': 0.6},
@@ -334,7 +334,7 @@ ax2.set_xlabel('Predictor X'); ax2.set_ylabel('Response Z')
 ax2.set_title('(b) Linear regression — negative correlation', loc='left', fontweight='bold')
 ax2.grid(alpha=0.3, linestyle='--')
 
-# 第三行：密度面板
+# Third row: density panels
 ax3 = fig.add_subplot(gs[2, 0])
 hb = ax3.hexbin(x, y, gridsize=22, cmap='Blues', mincnt=1,
                 edgecolors='white', linewidths=0.2)
@@ -353,10 +353,10 @@ fig.suptitle('Correlation Analysis with Marginal Distributions and Density Estim
 plt.show()
 ```
 
-#### 柱状图
+#### Bar Chart
 
 ```
-#-----------第一部分代码------------
+#-----------Part One Code------------
 #-------draw---------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.32)
@@ -435,60 +435,60 @@ data = {
     'Bed Temperature/℃': [0.0549, 0.2641, 4.46, 0.0121],
     'Printing Speed/mm∙s-1': [0.5753, 0.3722, 41.86, 0.5822],
     'Layer Height/mm': [6.75, 0.5403, 100.53, 0.0891],
-    # 新增第5个特征，仅Combine方向有有效数值，其他方向设为0（避免干扰）
+    # Added 5th feature, only Combine direction has valid values, others set to 0 (avoid interference)
     'Printing direction': [0, 0, 0, 11.31]
 }
 df = pd.DataFrame(data, index=['Upright', 'On-edge', 'Flat', 'Combine'])
 
 #----------process-----------
-# 提取原始数据矩阵
+# Extract raw data matrix
 raw_data = df.values
-# 进行Min-Max归一化，避免除以0错误（添加微小常数eps）
+# Perform Min-Max normalization, avoid division by 0 error (add tiny constant eps)
 eps = 1e-8
 min_val = raw_data.min()
 max_val = raw_data.max()
 normalized_data = (raw_data - min_val) / (max_val - min_val + eps)
-# 将归一化后的数据赋值回新的DataFrame
+# Assign normalized data back to a new DataFrame
 df_normalized = pd.DataFrame(normalized_data, index=df.index, columns=df.columns)
-bar_width = 0.15  # 调整柱子宽度（5个特征需比4个更窄）
-x_labels = df_normalized.index.tolist()  # 横坐标标签（打印方向）
-features = df_normalized.columns.tolist()  # 5个特征名称
-n_features = len(features)  # 特征数量（5）
-n_x = len(x_labels)  # 横坐标类别数量（4）
-x = np.arange(n_x)  # 横坐标基准位置（0,1,2,3）
-# 每个特征对应的柱子偏移量（使同一打印方向的柱子并列）
+bar_width = 0.15  # Adjust bar width (5 features need narrower bars than 4)
+x_labels = df_normalized.index.tolist()  # x-axis labels (printing direction)
+features = df_normalized.columns.tolist()  # 5 feature names
+n_features = len(features)  # Number of features (5)
+n_x = len(x_labels)  # Number of x-axis categories (4)
+x = np.arange(n_x)  # x-axis base positions (0,1,2,3)
+# Bar offset for each feature (so bars in the same printing direction are side by side)
 offsets = np.linspace(-(n_features-1)*bar_width/2, (n_features-1)*bar_width/2, n_features)
 
-colors = ["#649fca", "#c68f5f", "#63bd63", "#D05E5E", "#8F51C8"]  # 新增深紫色对应第5个特征
+colors = ["#649fca", "#c68f5f", "#63bd63", "#D05E5E", "#8F51C8"]  # Added dark purple corresponding to the 5th feature
 
 #--------draw---------
-fig, ax = plt.subplots(figsize=(10, 5))  # 加宽图表尺寸（适配5个特征，避免拥挤）
-# 循环绘制每个特征的柱子
+fig, ax = plt.subplots(figsize=(10, 5))  # Widen chart size (fits 5 features, avoids crowding)
+# Loop to draw bars for each feature
 for i, (feature, color, offset) in enumerate(zip(features, colors, offsets)):
-    y_data = df_normalized[feature].values  # 提取归一化后的F值数据
-    # 绘制柱状图
+    y_data = df_normalized[feature].values  # Extract normalized F-value data
+    # Draw bar chart
     bars = ax.bar(x + offset, y_data, width=bar_width, color=color, 
                   label=feature, alpha=0.9, edgecolor='black')
   
-    # 柱子顶部添加数值标签（优化：前3个方向的第5根柱子（值为0）不显示标签，Combine方向正常显示）
+    # Add value labels at top of bars (optimization: don't show labels for the 5th bar (value=0) in first 3 directions; show normally for Combine direction)
     for bar_idx, bar in enumerate(bars):
         height = bar.get_height()
-        # 条件：1. 高度大于0（排除前3个方向的第5根柱子） 2. 不是前3个方向的第5个特征
-        if height > 1e-3:  # 过滤极小值（归一化后接近0的数值）
+        # Conditions: 1. Height > 0 (exclude 5th bar in first 3 directions) 2. Not the 5th feature in first 3 directions
+        if height > 1e-3:  # Filter very small values (close to 0 after normalization)
             ax.text(bar.get_x() + bar.get_width()/2., height + 0.005,
                     f'{height:.3f}', ha='center', va='bottom', fontsize=8)
 
-# 设置横坐标标签和位置
+# Set x-axis labels and positions
 ax.set_xticks(x)
-ax.set_xticklabels(x_labels, rotation=0)  # 横坐标标签不旋转，保持整洁
+ax.set_xticklabels(x_labels, rotation=0)  # x-axis labels not rotated, keep clean
 
-# 设置纵坐标标签（标注归一化，加粗突出）
+# Set y-axis label (annotated as normalized, bold for emphasis)
 ax.set_ylabel('Normalized F-value', fontweight='bold')
-# 设置纵坐标范围（归一化后数据在[0,1]，预留20%空间避免标签遮挡）
+# Set y-axis range (data is in [0,1] after normalization, reserve 20% space to avoid label obstruction)
 ax.set_ylim(0, 1.2)
-# 添加图例（位置在图表外部右侧，适配5个特征，避免遮挡柱子）
+# Add legend (positioned outside on right side of chart, fits 5 features, avoids covering bars)
 ax.legend( loc='upper right', bbox_to_anchor=(1, 1), frameon=False)
-# 调整布局（防止图例、标签被截断，适配加宽后的图表）
+# Adjust layout (prevent legend and labels from being cut off, fits widened chart)
 plt.tight_layout(rect=[0, 0, 0.85, 1])
 plt.show()
 ```
@@ -541,10 +541,10 @@ ax.spines["top"].set_visible(True)
 ax.spines["right"].set_visible(True)
 
 ax.legend(
-loc="lower center",           # 图例锚点在底部中间
-bbox_to_anchor=(0.5, 0.98),  # 0.5表示x轴正中，1.08表示y轴略高于图表
+loc="lower center",           # Legend anchor at bottom center
+bbox_to_anchor=(0.5, 0.98),  # 0.5 means x-axis center, 1.08 means slightly above the chart on y-axis
 frameon=False,
-ncol=len(models),              # 如果想让图例横向排列
+ncol=len(models),              # If you want the legend arranged horizontally
 fontsize=12
 )
 
@@ -555,8 +555,8 @@ plt.close(fig)
 
 ```
 #-----------draw------------
-color = 'teal'  # 单个组的颜色
-bar_width = 0.25  #柱子宽度
+color = 'teal'  # Color for a single group
+bar_width = 0.25  # Bar width
 x = np.arange(len(labels)) 
 
 fig_x, ax_x = plt.subplots(figsize=(16,8))
@@ -574,10 +574,10 @@ plt.tight_layout()
 plt.show()
 ```
 
-#### 折线图
+#### Line Chart
 
 ```
-#---------第一部分代码--------------
+#---------Part One Code--------------
 #------draw-------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.32)
@@ -651,15 +651,15 @@ plt.show()
 ```
 def plot_all_directions_combined(direction_data, save_path=None):
     """
-    在同一张图的 2x2 子图中绘制每个自变量的多方向对比（每个子图包含所有 sheet 的曲线）
+    Draw multi-direction comparison for each independent variable in the same 2x2 subplot figure (each subplot contains curves for all sheets)
     """
 
   #---------data---------
     features = [
-        {'col': '层厚/ mm', 'title': '(a) Layer height', 'xlabel': 'Layer height (mm)', 'xticks': [0.1, 0.2, 0.3]},
+        {'col': 'Layer Thickness/ mm', 'title': '(a) Layer height', 'xlabel': 'Layer height (mm)', 'xticks': [0.1, 0.2, 0.3]},
         {'col': 'Printing speed/ mm·s-1', 'title': '(b) Printing speed', 'xlabel': 'Printing speed (mm・s⁻¹)', 'xticks': [30, 75, 120]},
-        {'col': ' 热床温度/ °C', 'title': '(c) Bed temperature', 'xlabel': 'Bed temperature (°C)', 'xticks': [70, 80, 90]},
-        {'col': '喷嘴挤出温度 /°C', 'title': '(d) Extrusion temperature', 'xlabel': 'Extrusion temperature (°C)', 'xticks': [300, 310, 320]}
+        {'col': ' Bed Temperature/ °C', 'title': '(c) Bed temperature', 'xlabel': 'Bed temperature (°C)', 'xticks': [70, 80, 90]},
+        {'col': 'Nozzle Extrusion Temperature /°C', 'title': '(d) Extrusion temperature', 'xlabel': 'Extrusion temperature (°C)', 'xticks': [300, 310, 320]}
     ]
 
     dir_items = list(direction_data.items())
@@ -672,17 +672,17 @@ def plot_all_directions_combined(direction_data, save_path=None):
     from itertools import cycle
     color_cycle = cycle(colors)
 
-    # 主循环：每个子图绘制所有方向曲线
+    # Main loop: draw all direction curves in each subplot
     for i, (feat, ax) in enumerate(zip(features, axes)):
         all_y_means = []
         all_y_stds = []
         all_xs = []
 
-        # 为图例准备
+        # Prepare for legend
         handles = []
         labels = []
 
-        # 遍历每个方向并绘制其曲线（均值+误差）
+        # Iterate through each direction and draw its curve (mean + error)
         for j, (dir_name, df_dir) in enumerate(dir_items):
             processed_df = process_data(df_dir, feat['col'])
             if processed_df.empty:
@@ -692,12 +692,12 @@ def plot_all_directions_combined(direction_data, save_path=None):
             y_std = processed_df['std']
 
             col = colors[j % len(colors)]
-            # 绘制线与误差棒
+            # Draw line and error bars
             line = ax.errorbar(
                 x=x, y=y_mean, yerr=y_std,
                 color=col,
                 linestyle=line_style,
-                marker=['o', 's', '^'][j % 3],  # 不同方向使用不同标记形状
+                marker=['o', 's', '^'][j % 3],  # Different markers for different directions
                 markersize=marker_size,
                 linewidth=2,
                 elinewidth=error_bar_width,
@@ -713,10 +713,10 @@ def plot_all_directions_combined(direction_data, save_path=None):
             all_y_stds.append(y_std)
             all_xs.append(x)
 
-        # 设置横坐标刻度：优先使用配置中的 xticks，否则使用合并的所有 x 值（排序）
+        # Set x-axis ticks: prefer xticks from config, otherwise use combined sorted x values
         if 'xticks' in feat and feat['xticks'] is not None:
             desired_ticks = np.array(feat['xticks'], dtype=float)
-            # 取所有方向的 x 范围交集/并集作为参考
+            # Use intersection/union of x ranges from all directions as reference
             if all_xs:
                 xmin = min([xs.min() for xs in all_xs])
                 xmax = max([xs.max() for xs in all_xs])
@@ -724,7 +724,7 @@ def plot_all_directions_combined(direction_data, save_path=None):
             else:
                 valid_ticks = desired_ticks
             if len(valid_ticks) == 0:
-                # 退回到合并 x 值位置
+                # Fall back to combined x value positions
                 combined_x = np.unique(np.concatenate([np.array(xs) for xs in all_xs]) if all_xs else np.array([]))
                 ax.set_xticks(combined_x)
                 ax.set_xticklabels([str(v) for v in combined_x], rotation=0)
@@ -736,13 +736,13 @@ def plot_all_directions_combined(direction_data, save_path=None):
             ax.set_xticks(combined_x)
             ax.set_xticklabels([str(v) for v in combined_x], rotation=0)
 
-        # 子图美化
+        # Subplot beautification
         ax.set_title(feat['title'], fontsize=12, fontweight='bold', pad=10)
         ax.set_xlabel(feat['xlabel'], fontsize=10)
         ax.set_ylabel('Impact strength (kJ・m⁻²)', fontsize=10)
         ax.tick_params(axis='both', labelsize=8)
 
-        # 合并 y 范围，确保误差棒不会超出
+        # Combine y range to ensure error bars don't go out of bounds
         if all_y_means:
             combined_mean = pd.concat(all_y_means, ignore_index=True)
             combined_std = pd.concat(all_y_stds, ignore_index=True)
@@ -753,7 +753,7 @@ def plot_all_directions_combined(direction_data, save_path=None):
    
         # ax.legend( fontsize=12, title='Direction', title_fontsize=10, loc='lower right')
 
-    # 全局标题与布局
+    # Global title and layout
     fig.suptitle(f'Impact strength of FDM specimens - combined directions', fontsize=12, fontweight='bold', y=0.98)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
@@ -761,7 +761,7 @@ def plot_all_directions_combined(direction_data, save_path=None):
 ```
 
 ```
-# 多曲线 + 误差带 (shaded ±1σ)
+# Multiple curves + error band (shaded ±1σ)
 #--------data-----------
 np.random.seed(1)
 x = np.linspace(0, 100, 50)
@@ -791,7 +791,7 @@ plt.show()
 ```
 
 ```
-#双 y 轴折线
+# Dual y-axis line plot
 #--------------data----------------
 np.random.seed(3)
 x = np.arange(1, 13)
@@ -827,10 +827,10 @@ plt.show()
 
 ```
 
-#### 箱线图，小提琴图
+#### Box Plot, Violin Plot
 
 ```
-#-----------第一部分代码------------
+#-----------Part One Code------------
 #-----draw-------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.30)
@@ -895,28 +895,28 @@ plt.show()
 ```
 def create_density_boxplot(sheet_name, data, color):
     """
-    创建核密度曲线和横放箱线图的组合图
+    Create a combined plot of kernel density curve and horizontal box plot
     """
 #-------data------------
-    # 提取冲击强度数据，去除可能的NaN值
-    impact_strength = data['冲击强度'].dropna()
+    # Extract impact strength data, removing possible NaN values
+    impact_strength = data['Impact Strength'].dropna()
   
-    # 计算核密度估计
+    # Compute kernel density estimation
     kde = gaussian_kde(impact_strength)
     x_range = np.linspace(impact_strength.min() * 0.9, impact_strength.max() * 1.1, 1000)
     density = kde(x_range)
   
 
 #--------draw----------
-    #创建图形
+    # Create figure
     fig, ax = plt.subplots(figsize=(10, 6))
-    #绘制核密度曲线
+    # Draw kernel density curve
     ax.plot(x_range, density, color=color, linewidth=4.5, label=f'{sheet_name} Dataset')
  
-    # 创建第二个y轴用于箱线图（位置在y=0附近）
+    # Create second y-axis for box plot (positioned near y=0)
     ax2 = ax.twinx()
   
-    # 绘制横放箱线图，设置在y=0位置
+    # Draw horizontal box plot, positioned at y=0
     bp = ax2.boxplot(impact_strength, vert=False, positions=[0], 
                      widths=0.1 * max(density), patch_artist=True,
                      boxprops=dict(facecolor=color, alpha=0.7, edgecolor='black', linewidth=1.2),
@@ -925,7 +925,7 @@ def create_density_boxplot(sheet_name, data, color):
                      capprops=dict(color='black', linewidth=1.2),
                      flierprops=dict(marker='o', markerfacecolor=color, markersize=4, alpha=0.6))
   
-    # 设置第二个y轴的范围和标签
+    # Set range and labels for second y-axis
     ax2.set_ylim(-0.05 * max(density), 0.15 * max(density))
     ax2.set_yticks([0])
     ax2.set_yticklabels([f'{sheet_name}'], fontsize=12, fontweight='bold')
@@ -933,20 +933,20 @@ def create_density_boxplot(sheet_name, data, color):
     ax2.spines['right'].set_visible(False)
     ax2.spines['left'].set_visible(False)
   
-    # 设置主坐标轴
+    # Set main axes
     ax.set_xlabel('Impact Strength (kJ・m⁻²)', fontsize=14, fontweight='bold')
     ax.set_ylabel('Kernel Density', fontsize=16, fontweight='bold')
   
     # ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.8)
   
-    # 设置标题
+    # Set title
     # title = f'Kernel Density Estimation and Distribution of Impact Strength\\nfor {sheet_name} Augmented Dataset'
     # ax.set_title(title, fontsize=16, fontweight='bold', pad=20)
   
     ax.set_xlim(impact_strength.min() * 0.8, impact_strength.max() * 1.2)
     ax.set_ylim(0, max(density) * 1.15)
   
-    # 添加统计信息文本框
+    # Add statistics info text box
     # stats_text = f'Sample Size: {len(impact_strength):,}\nMean: {impact_strength.mean():.3f}\nStd: {impact_strength.std():.3f}\nMin: {impact_strength.min():.3f}\nMax: {impact_strength.max():.3f}'
     # ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=14,
     #         verticalalignment='top',horizontalalignment='left', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8, edgecolor=color))
@@ -959,7 +959,7 @@ def create_density_boxplot(sheet_name, data, color):
 ```
 
 ```
-#分组箱线图 + 显著性 bracket
+# Grouped box plot + significance bracket
 #--------data------------
 np.random.seed(13)
 groups = ['Control', 'Low dose', 'High dose']

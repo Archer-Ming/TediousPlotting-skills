@@ -1829,9 +1829,15 @@ _RESULT_JSON = _json.dumps(_result)
  * =========================================================================== */
 const Agent = {
     history: [],   // [{role, content}]
+    lastSuccessfulCode: "",   // 上一次成功执行的绘图代码,用于"再改一下"类指令
+    lastSuccessfulSummary: "",
     maxRepairRounds: 2,
 
-    reset() { this.history = []; },
+    reset() {
+        this.history = [];
+        this.lastSuccessfulCode = "";
+        this.lastSuccessfulSummary = "";
+    },
 
     buildSystemPrompt(df) {
         const skillBlock = Skills.buildPromptSection();
@@ -1843,9 +1849,14 @@ const Agent = {
 你的每次回复**必须**是一个严格的 JSON 对象,不要使用 Markdown 代码块包裹整个 JSON,不要写任何解释性前缀或后缀。
 JSON 字段(根据 kind 选择字段):
 - "kind": "code" / "answer" / "read_template" 三选一。
-- "message": 给用户看的简短中文说明(始终需要)。
-- "code": 当 kind=="code" 时必填。一段完整可独立运行的 Python 代码字符串。
+- "message": 给用户看的简短中文说明(始终需要),**只用一两句话**,绝对不要在 message 里塞 \`\`\`python 代码块或大段代码。
+- "code": 当 kind=="code" 时必填。一段完整可独立运行的 Python 代码字符串(放到这里,不是 message)。
 - "filename": 当 kind=="read_template" 时必填。要读取的参考文件名(取自 <references> 列表)。
+
+【绝对禁止】
+- 把 python 代码塞进 message 字段并把 kind 写成 "answer"——这会让用户看不到图。
+- 复读上一轮 history 里出现过的"已为你生成图表"这种短摘要;每一轮都要重新决策。
+- 在没读模板的情况下,自己生成模板里的代码片段(请先 read_template)。
 
 【何时使用 read_template】
 当你即将开始生成一段绘图代码,而 <references> 中存在与该图表类型对应的模板文件时,
@@ -1945,6 +1956,21 @@ ${dataBlock}`;
         // 工作消息序列:在 read_template 多轮中我们要在它末尾追加内容
         const work = [{ role: "system", content: systemPrompt }, ...this.history];
 
+        // 迭代意图检测:如果用户像在"改/再画/换一种风格",把上次成功的代码
+        // 作为补充上下文塞到最后一条 user 消息前,但不污染长期 history。
+        const iterRe = /(改|换|再来|再画|重画|调整|加上|去掉|修改|放大|缩小|加粗|改成|变成|加.{0,3}图例|加.{0,3}标题|颜色|配色|字体|字号|视角)/;
+        if (this.lastSuccessfulCode && iterRe.test(userMessage) && work.length >= 2) {
+            const last = work[work.length - 1];
+            // 找到本轮用户那条,在它前面插入提示
+            if (last && last.role === "user") {
+                work.splice(work.length - 1, 0, {
+                    role: "user",
+                    content:
+                        `(参考:这是上一轮成功执行的绘图代码,请在它的基础上做用户要求的修改。如果有相关模板可以再 read_template 一次。)\n\`\`\`python\n${this.lastSuccessfulCode}\n\`\`\``,
+                });
+            }
+        }
+
         const MAX_READ_ROUNDS = 4;   // 最多让 LLM 读 4 份模板,防死循环
         let raw = null;
         let payload = null;
@@ -2014,8 +2040,42 @@ ${dataBlock}`;
         }
 
         // —— 阶段二:把协商结果落实成 answer 或 code ——
-        const kind = payload.kind || "answer";
-        const message = String(payload.message || "").trim();
+        let kind = payload.kind || "answer";
+        let message = String(payload.message || "").trim();
+
+        // 复读检测:LLM 有时会把上一轮历史文本原样回弹回来,
+        // 形如 "...[已执行的绘图代码]: ```python ...```",并把它当 answer。
+        // 这种情况下根本没真正执行新代码,必须拒绝并强制重发。
+        const looksLikeReplay =
+            (kind === "answer" || !payload.code) &&
+            (
+                /\[已执行的绘图代码\]/.test(message) ||
+                (/```python[\s\S]+?```/.test(message) && /plt\.|fig\s*[,=]|ax\.|sns\./.test(message))
+            );
+        if (looksLikeReplay) {
+            emit({ kind: "thinking", text: "⚠️ 检测到模型把代码当 answer 复读了,要求它重新生成 code…" });
+            const corrective = [
+                ...work,
+                { role: "assistant", content: raw },
+                {
+                    role: "user",
+                    content: `你刚才的回复把绘图代码塞进了 message 字段并用 kind="answer" 返回,这是错误的。
+请重新发送严格 JSON,kind 必须是 "code","code" 字段是完整可独立运行的 Python 代码,
+"message" 只用一两句话描述你画了什么、依据哪份模板,不要在 message 里粘任何 python 代码或 \`\`\` 代码块。`,
+                },
+            ];
+            try {
+                raw = await this.callLLM(corrective);
+            } catch (e) {
+                const msg = "纠正调用失败:" + e.message;
+                emit({ kind: "error", text: msg });
+                this.history.push({ role: "assistant", content: msg });
+                return { final_message: msg, success: false };
+            }
+            payload = this.parsePayload(raw);
+            kind = payload.kind || "answer";
+            message = String(payload.message || "").trim();
+        }
 
         if (kind === "answer" || !payload.code) {
             const final = message || "(无内容)";
@@ -2041,8 +2101,13 @@ ${dataBlock}`;
                     code,
                     image_data_url: result.image_data_url,
                 });
-                const archived = `${message}\n\n[已执行的绘图代码]:\n\`\`\`python\n${code}\n\`\`\`\n(执行成功,已生成图像)`;
-                this.history.push({ role: "assistant", content: archived });
+                // 关键修复:不再把整段代码塞进 history,只塞一句短摘要。
+                // 否则 LLM 会模仿这种格式,把代码原文当 message 复读,导致下一次"再画一张"
+                // 直接被 LLM 当成 answer 返回那段历史文本(用户看到的就是没真正执行的假图)。
+                const summary = (message || "已为你生成图表。").slice(0, 200);
+                this.history.push({ role: "assistant", content: summary });
+                this.lastSuccessfulCode = code;
+                this.lastSuccessfulSummary = summary;
                 return {
                     final_message: message || "已为你生成图表。",
                     image_data_url: result.image_data_url,

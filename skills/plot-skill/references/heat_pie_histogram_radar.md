@@ -1,15 +1,15 @@
-## 包含了一系列绘图的模板
+## Contains a series of plotting templates
 
-### 重要规则！
+### Important Rules!
 
-* 每个类型的模板第一部分代码呈现的是从简单到复杂的图表，你需要渐进的去学习这些模板。
-* 每个类型的剩余部分模板代码为具体带有独特风格和设计的图表，你也要去学习这些模板。
-* 参考模板里面的样例数据的x坐标，y坐标，数据标题名称，亦或是对数据的处理读取，请严格忽略！！！
+* The first part of the code in each type of template presents charts from simple to complex. You need to learn these templates progressively.
+* The remaining template code in each type contains charts with specific unique styles and designs. You should also learn these templates.
+* For the x-coordinates, y-coordinates, data title names in the sample data of the reference templates, or the data processing/reading, please strictly ignore them!!!
 
-#### 热力图
+#### Heatmap
 
 ```
-#-------------第一部分代码------------
+#-------------Part One Code------------
 #-----draw---------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.55)
@@ -77,7 +77,7 @@ plt.show()
 ```
 
 ```
-#下三角掩码热力图
+# Lower-triangle masked heatmap
 #------------data-----------------
 features = [
     "bmi",
@@ -92,7 +92,7 @@ features = [
     "weight"
 ]
 
-# 示例相关矩阵（对称矩阵）
+# Example correlation matrix (symmetric matrix)
 corr_values = np.array([
     [ 1.00,  0.02, -0.03,  0.00, -0.10,  0.01,  0.03,  0.03,  0.04, -0.01],
     [ 0.02,  1.00,  0.03,  0.08,  0.02, -0.03, -0.03,  0.06,  0.10,  0.15],
@@ -106,17 +106,17 @@ corr_values = np.array([
     [-0.01,  0.15,  0.01, -0.04, -0.04, -0.02,  0.04,  0.06, -0.02,  1.00]
 ])
 
-# 转换为DataFrame
+# Convert to DataFrame
 corr = pd.DataFrame(corr_values, index=features, columns=features)
 
 
 #------------draw------------------
-# 创建下三角掩码
+# Create lower-triangle mask
 mask = np.triu(np.ones_like(corr, dtype=bool))
-# 设置画布
+# Set up canvas
 plt.figure(figsize=(10, 8))
 
-# 绘制热力图
+# Draw heatmap
 sns.heatmap(
     corr,
     mask=mask,
@@ -137,7 +137,7 @@ plt.show()
 ```
 
 ```
-#气泡图
+# Bubble plot
 #-----------data---------------
 df = pd.read_excel(file_path, index_col=0)
 
@@ -151,7 +151,7 @@ vmax = df.values.max()
 
 for i in range(n):
     for j in range(n):
-        if j > i:  # 右上角
+        if j > i:  # upper-right
             value = df.iloc[i, j]
 
             ax.scatter(
@@ -163,8 +163,8 @@ for i in range(n):
                 vmin=vmin,
                 vmax=vmax,
                 alpha=0.9,
-                edgecolors='black',   # 黑色边框
-                linewidths=1          # 边框宽度
+                edgecolors='black',   # black border
+                linewidths=1          # border width
             )
 for i in range(n):
     for j in range(n):
@@ -199,7 +199,7 @@ sm.set_array([])
 cbar = fig.colorbar(sm, ax=ax)
 cbar.set_label("SHAP Interaction Value")
 fig.text(
-    -0.03, 0.97,      # 左上角位置
+    -0.03, 0.97,      # upper-left position
     "(d-2)",
     fontsize=23,
     fontweight="bold",
@@ -210,7 +210,7 @@ plt.show()
 ```
 
 ```
-#非对称相关矩阵（上气泡 / 下数值）
+# Asymmetric correlation matrix (upper bubbles / lower values)
 #---------------data-----------
 features = ['Strength', 'Modulus', 'Toughness', 'Hardness', 'Density', 'Strain']
 n = len(features)
@@ -228,17 +228,17 @@ norm = plt.Normalize(vmin, vmax)
 for i in range(n):
     for j in range(n):
         v = df_corr.iloc[i, j]
-        if j > i:                           # 上三角：气泡
+        if j > i:                           # upper triangle: bubbles
             ax.scatter(j, n-1-i, s=abs(v)*1400 + 50, c=[cmap(norm(v))],
                        edgecolor='black', linewidth=0.8, alpha=0.92)
-        elif j < i:                         # 下三角：数值 + 淡色背景
+        elif j < i:                         # lower triangle: values + light background
             ax.add_patch(plt.Rectangle((j-0.45, n-1-i-0.45), 0.9, 0.9,
                                        facecolor=cmap(norm(v)), alpha=0.35,
                                        edgecolor='white', linewidth=1))
             ax.text(j, n-1-i, f'{v:.2f}', ha='center', va='center',
                     fontsize=11, fontweight='bold',
                     color='black' if abs(v) < 0.6 else 'white')
-        else:                               # 对角线：变量名
+        else:                               # diagonal: variable name
             ax.add_patch(plt.Rectangle((j-0.45, n-1-i-0.45), 0.9, 0.9,
                                        facecolor='#2c3e50', edgecolor='white'))
             ax.text(j, n-1-i, features[i], ha='center', va='center',
@@ -265,10 +265,10 @@ plt.show()
 
 ```
 
-#### 直方图，密度曲线图
+#### Histogram, Density Curve Plot
 
 ```
-#---------第一部分代码---------
+#---------Part One Code---------
 #-----draw------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.30)
@@ -359,7 +359,7 @@ cm_norm = cm / cm.sum(axis=1, keepdims=True)
 #----------draw--------------------
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-# (a) 混淆矩阵
+# (a) Confusion matrix
 ax = axes[0]
 sns.heatmap(cm_norm, annot=cm, fmt='d', cmap='Blues',
             xticklabels=classes, yticklabels=classes,
@@ -370,12 +370,12 @@ ax.set_xlabel('Predicted Label', fontweight='bold')
 ax.set_ylabel('True Label', fontweight='bold')
 ax.set_title('(a) Confusion Matrix (count + normalized)',
              loc='left', fontweight='bold')
-# 红框高亮对角线
+# Highlight diagonal with red boxes
 for i in range(len(classes)):
     ax.add_patch(plt.Rectangle((i, i), 1, 1, fill=False,
                                edgecolor='#C73E1D', lw=2.2))
 
-# (b) ROC 曲线
+# (b) ROC curves
 ax = axes[1]
 fpr_grid = np.linspace(0, 1, 100)
 aucs = [0.94, 0.91, 0.87, 0.92]
@@ -399,10 +399,10 @@ plt.tight_layout()
 plt.show()
 ```
 
-#### 饼图
+#### Pie Chart
 
 ```
-#----------------第一部分代码-------------
+#----------------Part One Code-------------
 #------draw-------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.30)
@@ -468,10 +468,10 @@ plt.show()
 
 ```
 
-#### 雷达图
+#### Radar Chart
 
 ```
-#-----------第一部分代码-----------
+#-----------Part One Code-----------
 #-------draw------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.40)

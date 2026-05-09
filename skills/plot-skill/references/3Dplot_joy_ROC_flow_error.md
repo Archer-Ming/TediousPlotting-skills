@@ -1,15 +1,15 @@
-包含了一系列绘图的模板
+Contains a series of plotting templates
 
-### 重要规则！
+### Important Rules!
 
-* 每个类型的模板第一部分代码呈现的是从简单到复杂的图表，你需要渐进的去学习这些模板。
-* 每个类型的剩余部分模板代码为具体带有独特风格和设计的图表，你也要去学习这些模板。
-* 参考模板里面的样例数据的x坐标，y坐标，数据标题名称，亦或是对数据的处理读取，请严格忽略！！！
+* The first part of the code in each type of template presents charts from simple to complex. You need to learn these templates progressively.
+* The remaining template code in each type contains charts with specific unique styles and designs. You should also learn these templates.
+* For the x-coordinates, y-coordinates, data title names in the sample data of the reference templates, or the data processing/reading, please strictly ignore them!!!
 
-#### 3D曲面图
+#### 3D Surface Plot
 
 ```
-#----------第一部分代码--------
+#----------Part One Code--------
 #----draw-----
 from mpl_toolkits.mplot3d import Axes3D  # noqa
 fig = plt.figure(figsize=FIGSIZE)
@@ -78,7 +78,7 @@ plt.show()
 
 ```
 #----------data------------
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  注册 3d 投影
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  register 3d projection
 
 x = np.linspace(-3, 3, 80); y = np.linspace(-3, 3, 80)
 X, Y = np.meshgrid(x, y)
@@ -88,7 +88,7 @@ Z = (np.exp(-(X**2 + Y**2)/3) * np.cos(X*1.2)
 #-----------draw--------------
 fig = plt.figure(figsize=(14, 6))
 
-# (a) 3D 曲面
+# (a) 3D surface
 ax1 = fig.add_subplot(1, 2, 1, projection='3d')
 surf = ax1.plot_surface(X, Y, Z, cmap='viridis', edgecolor='none',
                         alpha=0.92, antialiased=True, rstride=2, cstride=2)
@@ -99,13 +99,13 @@ ax1.set_title('(a) 3D Stress Surface', loc='left', fontweight='bold', pad=10)
 ax1.view_init(elev=28, azim=-55)
 fig.colorbar(surf, ax=ax1, shrink=0.55, pad=0.1, label='σ (MPa)')
 
-# (b) 2D 等高线
+# (b) 2D contour
 ax2 = fig.add_subplot(1, 2, 2)
 cf = ax2.contourf(X, Y, Z, levels=18, cmap='viridis')
 cs = ax2.contour(X, Y, Z, levels=10, colors='white', linewidths=0.6, alpha=0.85)
 ax2.clabel(cs, inline=True, fontsize=8, fmt='%.2f')
 
-# 标记极值点
+# Mark extreme points
 yi, xi = np.unravel_index(np.argmax(Z), Z.shape)
 ax2.plot(X[yi, xi], Y[yi, xi], 'r*', markersize=18,
          markeredgecolor='white', markeredgewidth=1.2,
@@ -129,10 +129,10 @@ plt.show()
 
 ```
 
-#### 场图
+#### Field Plot
 
 ```
-#----------第一部分代码----------
+#----------Part One Code----------
 #------draw-------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.32)
@@ -185,7 +185,7 @@ plt.show()
 
 ```
 
-#### Joy图
+#### Joy Plot
 
 ```
 #-------------data-----------
@@ -224,7 +224,7 @@ plt.show()
 
 ```
 
-#### ROC曲线/混淆矩阵图
+#### ROC Curve / Confusion Matrix Plot
 
 ```
 #-----------data-------------
@@ -238,7 +238,7 @@ cm_norm = cm / cm.sum(axis=1, keepdims=True)
 #----------draw--------------------
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-# (a) 混淆矩阵
+# (a) Confusion matrix
 ax = axes[0]
 sns.heatmap(cm_norm, annot=cm, fmt='d', cmap='Blues',
             xticklabels=classes, yticklabels=classes,
@@ -249,12 +249,12 @@ ax.set_xlabel('Predicted Label', fontweight='bold')
 ax.set_ylabel('True Label', fontweight='bold')
 ax.set_title('(a) Confusion Matrix (count + normalized)',
              loc='left', fontweight='bold')
-# 红框高亮对角线
+# Highlight diagonal with red boxes
 for i in range(len(classes)):
     ax.add_patch(plt.Rectangle((i, i), 1, 1, fill=False,
                                edgecolor='#C73E1D', lw=2.2))
 
-# (b) ROC 曲线
+# (b) ROC curves
 ax = axes[1]
 fpr_grid = np.linspace(0, 1, 100)
 aucs = [0.94, 0.91, 0.87, 0.92]
@@ -279,10 +279,10 @@ plt.show()
 
 ```
 
-#### 误差与不确定性图
+#### Error & Uncertainty Plot
 
 ```
-#-----------第一部分代码---------
+#-----------Part One Code---------
 #---draw----
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.34)
@@ -378,10 +378,10 @@ plt.show()
 
 ```
 
-#### 流向与关系图
+#### Flow & Relationship Diagrams
 
 ```
-#---------第一部分代码--------
+#---------Part One Code--------
 #------draw-----
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.30)
@@ -528,10 +528,10 @@ plt.show()
 
 ```
 
-#### 回归诊断
+#### Regression Diagnostics
 
 ```
-#-----------第一部分代码------------
+#-----------Part One Code------------
 #--------draw--------
 fig = plt.figure(figsize=FIGSIZE)
 gs = GridSpec(1, 4, figure=fig, wspace=0.32)
