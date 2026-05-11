@@ -18,7 +18,7 @@ AI绘制的图老达不到理想？
 
 ## **快速体验**
 
-### **Cloud Code**
+### **Cloude Code**
 
 ```
 git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
