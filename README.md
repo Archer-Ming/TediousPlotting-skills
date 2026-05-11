@@ -2,39 +2,67 @@
 
 ---
 
-## 更多绘图持续蒸馏中...
+## 更多绘图Skills持续蒸馏中...
 
 AI绘制的图老达不到理想？
 国外大模型太费token？
 需求与出图相违背？
 
-试试这个skill！一份将高质量期刊级别图表以及高性能ai的绘图逻辑联合蒸馏成的一份可在本地agent/claw进行绘制的技能。
+试试这些skills！将高质量期刊级别图表，流程架构图以及高性能AI的绘图逻辑联合蒸馏成的一份可在本地agent/claw进行绘制的技能。
 
-***它可以用在你的论文，竞赛，PPT等***
-
-Just clone this into Claude Code and use it as a skill! Want to test it? Try the **miniAgent** mentioned above – just clone it locally and connect your API, it supports domestic models like DeepSeek. More templates are continuously being improved, and I’d be very happy if you could provide suggestions for this skill!
+***它可以用在你的期刊论文，竞赛，PPT等！***
 
 ---
 
-## **特色**
-
-    它严格规范了期刊的图表参数设置,配色,风格；并提供了大量从简单到多图层复合图表模板。
-
-    规范了输入输出格式以及自检项，大幅度降低了Agent绘图时消耗无关紧要的token，确保了输出所需的高质量配图。
-
----
+ Want to test it easily? Try the **miniAgent** mentioned above – just clone it locally and connect your API, it supports domestic models like DeepSeek. More templates are continuously being improved, and I’d be very happy if you could provide suggestions for this skill!
 
 ## **快速体验**
 
-**将本项目skills文件克隆并在  *cluade code*  等Agent产品里添加即可使用**
+### **Cloud Code**
 
-或者使用我们开发的简易网页 ***miniAgent*（它有点简陋但足以支撑skills测试和体验！）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
+```
+git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
+```
 
-*具体说明参考见：*
-[miniAgent\README.md](miniAgent\README.md)
+**将skills文件夹里你想要的skill添加到 *cluade code*  里即可使用**
 
-*miniAgent：*
-[miniAgent\miniAgent.html](miniAgent\miniAgent.html)
+### **miniAgent(Personal Test)**
+
+或者使用我们开发的网页 ***miniAgent*（它有点简陋但足以支撑skills测试和体验！持续开发改进中(0v0) ）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
+
+*具体说明参考见：*         [miniAgent\README.md](miniAgent\README.md)
+
+*miniAgent 网页:*            [miniAgent\miniAgent.html](miniAgent\miniAgent.html)
+
+## **关于Skills的手册？**
+
+| Skill      | 说明                                     | 进度 |
+| ---------- | ---------------------------------------- | ---- |
+| Plot-skill | 覆盖各类常见的趋势，分布，对比，相关性图 | 完善 |
+| Flow-skill | 流程图，架构图，思维导图                 | 布局 |
+
+---
+
+## Plot-skill
+
+### **特色**
+
+    严格规范了期刊的图表参数设置,配色,风格；并提供了大量从简单到多图层复合图表模板。
+
+    规范了输入输出格式以及自检项，大幅度降低了Agent绘图时消耗无关紧要的token，确保了输出所需的高质量配图。
+
+### **骨架**
+
+```
+plot-skill/        针对SCI论文，竞赛，PPT的高质量配图 --> PNG
+|   ├── references/ 
+|   |   ├── 3Dplot_joy_ROC_flow_error.md    3D曲面，误差棒，joy图...
+│   |   ├── heat_pie_histogram_radar.md	    热力图，饼图，雷达图...		 
+│   |   ├── scatter_bar_line_box.md         散点图，柱状图，折线图，箱线图...
+|   |
+|   ├── SKILL.md   规则限制
+
+```
 
 <table>
   <tr>
@@ -69,8 +97,5 @@ Just clone this into Claude Code and use it as a skill! Want to test it? Try the
   </tr>
   <tr>
     <td><img src="example\f11.png" width="800"></td>
-  </tr>  
-  <tr>
-    <td><img src="example\e8.png" width="800"></td>
   </tr>  
 </table>
