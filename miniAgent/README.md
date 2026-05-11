@@ -1,6 +1,6 @@
 # miniAgent
 
-**更多功能/不足持续修正中，如果您感兴趣并对miniAgent功能改进有建议**  ***QQ:2496738646***
+**更多功能/不足持续修正中，如果您感兴趣并对miniAgent功能改进有建议**  ***QQ:2496738646***                                               <td><img src="assets\介绍1.png" width="500">
 
 ---
 
@@ -8,9 +8,8 @@ miniAgent is a web-based Agent that conveniently enables the workflow from requi
 
 It comes with a built-in Pyodide sandbox tool, implementing an automated workflow of  **User <-> Large Model <-> Tool** .
 
-**It solves the problem that large models can only return plotting code but cannot generate the plot in one step.**
+**It solves the problem that large models can only return plotting code but cannot generate the plot in one step.**   
 
-<td><img src="assets\介绍1.png" width="500">
 
 ---
 
