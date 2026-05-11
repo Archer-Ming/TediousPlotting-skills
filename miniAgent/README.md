@@ -2,11 +2,10 @@
                                          
 <table>
   <tr>
-    <td>**更多功能/不足持续修正中，如果您感兴趣并对miniAgent功能改进有建议**  ***QQ:2496738646*** </td>
+    <td>更多功能/不足持续修正中，如果您感兴趣并对miniAgent功能改进有建议  QQ:2496738646 </td>
     <td><img src="assets\介绍1.png" width="500"></td>
   </tr>
 </table>
----
 
 miniAgent is a web-based Agent that conveniently enables the workflow from requirements to target image generation.
 
