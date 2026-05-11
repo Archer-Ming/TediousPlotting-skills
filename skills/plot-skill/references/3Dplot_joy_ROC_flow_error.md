@@ -531,6 +531,7 @@ plt.show()
 #### Regression Diagnostics
 
 ```
+
 #-----------Part One Code------------
 #--------draw--------
 fig = plt.figure(figsize=FIGSIZE)
@@ -591,6 +592,88 @@ ax.axhline(-2, color='gray', lw=0.7, ls='--')
 fig.colorbar(sc, ax=ax, shrink=0.85, pad=0.02, label="Cook's D")
 ax.set_xlabel('Leverage'); ax.set_ylabel('Standardized residuals')
 panel(ax, 'd', "Leverage + Cook's distance")
+
+plt.show()
+
+```
+
+#### Time Series
+
+```
+#-----------Part One Code------------
+#-------data--------
+n = 200
+t = pd.date_range('2023-01-01', periods=n)
+trend = np.linspace(50, 100, n)
+season = 8*np.sin(np.linspace(0, 6*np.pi, n))
+noise = rng.normal(0, 2, n)
+y = trend + season + noise
+
+#------draw------
+fig = plt.figure(figsize=FIGSIZE)
+gs = GridSpec(1, 4, figure=fig, wspace=0.32)
+
+# (a) basic time series
+ax = fig.add_subplot(gs[0])
+ax.plot(t, y, color=C[0], lw=1.4)
+ax.fill_between(t, y.min()-2, y, color=C[0], alpha=0.12)
+ax.set_xlabel('Date'); ax.set_ylabel('Value')
+fig.autofmt_xdate(rotation=30)
+panel(ax, 'a', 'Single time series')
+
+# (b) decomposition (3 stacked subpanels via inset gridspec? simpler: 3 lines normalized)
+ax = fig.add_subplot(gs[1])
+ax.plot(t, y, color='gray', lw=1, alpha=0.6, label='Observed')
+ax.plot(t, trend, color=C[3], lw=2, label='Trend')
+# rolling mean for "seasonal residual"
+s_smooth = pd.Series(season).rolling(7, center=True).mean().bfill().ffill()
+ax.plot(t, trend + s_smooth, color=C[2], lw=1.5, ls='--', label='Trend + seasonal')
+ax.set_xlabel('Date'); ax.set_ylabel('Value')
+ax.legend(frameon=True, framealpha=0.9, fontsize=7, loc='upper left')
+panel(ax, 'b', 'Trend / seasonality')
+
+# (c) candlestick-like (OHLC)
+ax = fig.add_subplot(gs[2])
+n2 = 30
+t2 = pd.date_range('2024-01-01', periods=n2, freq='D')
+open_ = 100 + np.cumsum(rng.normal(0, 1, n2))
+close = open_ + rng.normal(0, 1.5, n2)
+high = np.maximum(open_, close) + rng.uniform(0.3, 1.5, n2)
+low  = np.minimum(open_, close) - rng.uniform(0.3, 1.5, n2)
+for i in range(n2):
+    c = C[6] if close[i] >= open_[i] else C[3]
+    ax.plot([i, i], [low[i], high[i]], color=c, lw=0.8)
+    ax.add_patch(Rectangle((i-0.35, min(open_[i], close[i])), 0.7,
+                            abs(close[i]-open_[i]), color=c, alpha=0.85,
+                            edgecolor='black', linewidth=0.4))
+ax.set_xticks(range(0, n2, 5))
+ax.set_xticklabels([t2[i].strftime('%m-%d') for i in range(0, n2, 5)],
+                    rotation=30, fontsize=7)
+ax.set_xlabel('Date'); ax.set_ylabel('Price')
+panel(ax, 'c', 'OHLC / candlestick')
+
+# (d) forecast with prediction interval
+ax = fig.add_subplot(gs[3])
+hist_n = 150
+fc_n = 50
+hist_t = t[:hist_n]; hist_y = y[:hist_n]
+fc_t = t[hist_n:hist_n + fc_n]
+# naive forecast: linear trend extrapolation
+coef = np.polyfit(np.arange(hist_n), hist_y, 1)
+fc_mean = np.polyval(coef, np.arange(hist_n, hist_n + fc_n))
+# widening CI
+band = 2 + np.sqrt(np.arange(fc_n))*0.6
+ax.plot(hist_t, hist_y, color=C[0], lw=1.3, label='History')
+ax.plot(fc_t, fc_mean, color=C[3], lw=2, ls='--', label='Forecast')
+ax.fill_between(fc_t, fc_mean - 2*band, fc_mean + 2*band,
+                color=C[3], alpha=0.15, label='95% PI')
+ax.fill_between(fc_t, fc_mean - band, fc_mean + band,
+                color=C[3], alpha=0.30, label='68% PI')
+ax.axvline(hist_t[-1], color='gray', ls=':', lw=1)
+ax.set_xlabel('Date'); ax.set_ylabel('Value')
+ax.legend(frameon=True, framealpha=0.9, fontsize=7, loc='lower right')
+fig.autofmt_xdate(rotation=30)
+panel(ax, 'd', 'Forecast + prediction interval')
 
 plt.show()
 
