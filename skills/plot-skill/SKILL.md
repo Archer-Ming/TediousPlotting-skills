@@ -1,5 +1,5 @@
 ---
-name: Professional Plotting Skill
+name: Plot Skill
 description: A professional scientific plotting skill that includes various common chart visualizations such as scatter plots, bar charts, line charts, box plots, violin plots, histograms, density curves, heatmaps, pie charts, radar charts, 3D surface plots, field plots, joy plots, ROC curves, confusion matrices, error/uncertainty plots, and flow/relationship diagrams. Use this skill when the user provides data and wants to perform analysis, variation, distribution, comparison, or trend visualization, and needs you to create high-quality charts. This skill strictly follows fixed scientific color schemes and font specifications, and performs self-checks before output, producing visualization charts that meet journal submission quality standards.
 ---
 ### Important Rules!
@@ -63,11 +63,11 @@ plt.rcParams.update({
 
 **Figure size**
 
-| Chart Type                                                                  | Figure Size                            |
-| --------------------------------------------------------------------------- | -------------------------------------- |
-| Line charts, bar charts, box plots, violin plots and other horizontal single charts | `(12, 8)` or `(10, 6)`             |
-| Pie charts, heatmaps, 3D surface plots and other square charts              | `(8, 8)` to `(16, 16)`             |
-| Multi-subplot charts                                                        | Based on subplot count `(12, 5)` to `(22, 15)` |
+| Chart Type                                                                          | Figure Size                                        |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Line charts, bar charts, box plots, violin plots and other horizontal single charts | `(12, 8)` or `(10, 6)`                         |
+| Pie charts, heatmaps, 3D surface plots and other square charts                      | `(8, 8)` to `(16, 16)`                         |
+| Multi-subplot charts                                                                | Based on subplot count `(12, 5)` to `(22, 15)` |
 
 **Common scientific visualization colors are listed below. Select from the following based on actual situation; do not arbitrarily use other colors:**
 
@@ -87,11 +87,11 @@ colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D',"#649fca", "#c68f5f", "#63b
 
 ### Reference Template Python
 
-|                                 Reference File                                 | Chart Type                                                                                  | When to Open                                                                                                            |
-| :----------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-|       [references/scatter_bar_line_box.md](reference\bar_line_box.md)          | Scatter plots, bar charts, line charts, box plots and their variants and composite charts   | When user needs involve time/category trends, inter-group comparison, distribution, scatter correlation                 |
-| [references/heat_pie_histogram_radart.md](reference\scatter_violin_heat.md)    | Pie charts, histograms, KDE density curves, radar charts, heatmaps and their variants and composite charts | When user needs involve matrix/correlation data, univariate distribution, proportion, multi-axis feature comparison      |
-|  [references/3Dplot_joy_ROC_flow_error.md](reference\3Dsurface_joy_ROC.md)     | 3D surfaces, 2D field plots, joy plots, confusion matrices, ROC curves and their variants and composite charts | When user needs involve 3D structure, vector/scalar fields, stacked distributions, classifier evaluation, uncertainty bands, model diagnostics |
+|                              Reference File                              | Chart Type                                                                                                     | When to Open                                                                                                                                   |
+| :----------------------------------------------------------------------: | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+|       [references/scatter_bar_line_box.md](reference\bar_line_box.md)       | Scatter plots, bar charts, line charts, box plots and their variants and composite charts                      | When user needs involve time/category trends, inter-group comparison, distribution, scatter correlation                                        |
+| [references/heat_pie_histogram_radart.md](reference\scatter_violin_heat.md) | Pie charts, histograms, KDE density curves, radar charts, heatmaps and their variants and composite charts     | When user needs involve matrix/correlation data, univariate distribution, proportion, multi-axis feature comparison                            |
+|  [references/3Dplot_joy_ROC_flow_error.md](reference\3Dsurface_joy_ROC.md)  | 3D surfaces, 2D field plots, joy plots, confusion matrices, ROC curves and their variants and composite charts | When user needs involve 3D structure, vector/scalar fields, stacked distributions, classifier evaluation, uncertainty bands, model diagnostics |
 
 If the requirements span multiple files, you can open them all.
 
