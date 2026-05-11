@@ -18,13 +18,13 @@ AI绘制的图老达不到理想？
 
 ## **快速体验**
 
-### **Cloude Code**
+### **Claude Code**
 
 ```
 git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 ```
 
-**将skills文件夹里你想要的skill添加到 *cluade code*  里即可使用**
+**将skills文件夹里你想要的skill添加到 *claude code*  里即可使用**
 
 ### **miniAgent(Personal Test)**
 
