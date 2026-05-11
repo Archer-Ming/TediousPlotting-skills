@@ -1,6 +1,6 @@
 # TediousPlotting-Skills
 
-
+---
 
 ## 更多绘图Skills持续蒸馏中...
 
