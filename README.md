@@ -32,14 +32,14 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 
 *具体说明参考见：*         [miniAgent介绍](./miniAgent/README.md)
 
-*miniAgent 网页:*            [miniAgent网页](./miniAgent/miniAgent.html)
+*miniAgent 网页:*              [miniAgent网页](./miniAgent/miniAgent.html)
 
 ## **关于Skills的手册**
 
 | Skill                                                      | 类型                 | 说明                                                 | 状态 |
 | ---------------------------------------------------------- | -------------------- | ---------------------------------------------------- | ---- |
 | [plot-skill](./skills/plot-skill) | 覆盖各类型的常见图表 | 用于数据统计分析，趋势，分布，对比，相关性，误差范围 | 完善 |
-| [flow-skill](./skills/flow-skill)   | 流程图，架构图       | 用于流程布局，模块架构，步骤决策                     | 草稿 |
+| [frame-skill](./skills/frame-skill)   | 期刊论文架构图       | 用于流程原理布局，模块架构，思维步骤决策                     | 草稿 |
 
 ---
 
