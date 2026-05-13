@@ -55,12 +55,13 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 
 ```
 plot-skill/        针对SCI论文，竞赛，PPT的高质量配图 --> PNG
-|   ├── references/ 
-|   |   ├── 3Dplot_joy_ROC_flow_error.md    3D曲面，误差棒，joy图...
-│   |   ├── heat_pie_histogram_radar.md	    热力图，饼图，雷达图...		 
-│   |   ├── scatter_bar_line_box.md         散点图，柱状图，折线图，箱线图...
-|   |
-|   ├── SKILL.md   规则限制
+├── references/ 
+|   ├── 3Dplot_joy_ROC_flow_error.md    3D曲面，误差棒，joy图...
+│   ├── heat_pie_histogram_radar.md	    热力图，饼图，雷达图...		 
+│   ├── scatter_bar_line_box.md         散点图，柱状图，折线图，箱线图...
+|
+|   
+├── SKILL.md   规则限制
 
 ```
 
@@ -99,3 +100,31 @@ plot-skill/        针对SCI论文，竞赛，PPT的高质量配图 --> PNG
     <td><img src="example\f11.png" width="800"></td>
   </tr>  
 </table>
+
+## Frame-skill
+
+### 特色
+
+   规范了期刊级别架构图的线框配色，整体布局平衡感，字体清晰度等设置。
+
+  提供了大量的SCI一二区和Nature等知名期刊的高引用论文的架构图，供大模型学习捕捉风格，布局。
+
+### 骨架
+
+```
+frame-skill/        针对SCI论文，竞赛的高质量架构图 --> PNG
+├── assets/ 
+|   ├── reference1.png    with more frame...
+|   
+|   
+├── SKILL.md    规则限制
+```
+
+```
+<table>
+  <tr>
+    <td><img src="skills\frame-skill\assets\reference4.png" width="800"></td>
+    <td><img src="skills\frame-skill\assets\reference5.png" width="800"></td>
+  </tr>
+</table>
+```
