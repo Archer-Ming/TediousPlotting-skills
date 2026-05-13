@@ -32,7 +32,7 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 
 *具体说明参考见：*         [miniAgent介绍](./miniAgent/README.md)
 
-*miniAgent 网页:*              [miniAgent网页](./miniAgent/miniAgent.html)
+*miniAgent 网页：*              [miniAgent网页](./miniAgent/miniAgent.html)
 
 ## **关于Skills的手册**
 
