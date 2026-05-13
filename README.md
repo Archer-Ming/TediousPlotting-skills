@@ -30,16 +30,16 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 
 或者使用我们开发的网页 ***miniAgent*（它有点简陋但足以支撑skills测试和体验！持续开发改进中(0v0) ）**，为此你只需要接入大模型密钥即可体验！它支持*deepseek*和*OpenAI*
 
-*具体说明参考见：*         [miniAgent\README.md](miniAgent\README.md)
+*具体说明参考见：*         [miniAgent介绍](./miniAgent/README.md)
 
-*miniAgent 网页:*            [miniAgent\miniAgent.html](miniAgent\miniAgent.html)
+*miniAgent 网页:*            [miniAgent网页](./miniAgent/miniAgent.html)
 
 ## **关于Skills的手册**
 
 | Skill                                                      | 类型                 | 说明                                                 | 状态 |
 | ---------------------------------------------------------- | -------------------- | ---------------------------------------------------- | ---- |
-| [./skills/Plot-skill](./Plot-skill) | 覆盖各类型的常见图表 | 用于数据统计分析，趋势，分布，对比，相关性，误差范围 | 完善 |
-| [./skills/flow-skill](./skills/flow-skill)   | 流程图，架构图       | 用于流程布局，模块架构，步骤决策                     | 草稿 |
+| [plot-skill](./skills/plot-skill) | 覆盖各类型的常见图表 | 用于数据统计分析，趋势，分布，对比，相关性，误差范围 | 完善 |
+| [flow-skill](./skills/flow-skill)   | 流程图，架构图       | 用于流程布局，模块架构，步骤决策                     | 草稿 |
 
 ---
 
