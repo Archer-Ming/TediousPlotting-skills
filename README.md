@@ -38,8 +38,8 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 
 | Skill                                                      | 类型                 | 说明                                                 | 状态 |
 | ---------------------------------------------------------- | -------------------- | ---------------------------------------------------- | ---- |
-| [TediousPlotting-skills/skills/Plot-skill](./Plot-skill) | 覆盖各类型的常见图表 | 用于数据统计分析，趋势，分布，对比，相关性，误差范围 | 完善 |
-| [TediousPlotting-skills/skills/Flow-skill](skills/DL-skill)   | 流程图，架构图       | 用于流程布局，模块架构，步骤决策                     | 草稿 |
+| [./skills/Plot-skill](./Plot-skill) | 覆盖各类型的常见图表 | 用于数据统计分析，趋势，分布，对比，相关性，误差范围 | 完善 |
+| [./skills/Flow-skill](./skills/Flow-skill)   | 流程图，架构图       | 用于流程布局，模块架构，步骤决策                     | 草稿 |
 
 ---
 
