@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  STYLE 04 · HIERARCHY (TREE)
+  Pattern: top-down tree, one root → branches outward → leaves.
+  Use for: taxonomies, decision trees, method classifications, organizational structures.
+  Palette: Pastel Academic. Font: Times New Roman + CJK.
+
+  Convention: depth dictates color (root=lavender, mid=blue, leaf=mint).
+  Coordinate system: 1600 x 900 viewBox.
+  Connectors: orthogonal (no diagonals) — branches at right angles, parent-bottom to child-top.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900"
+     font-family="'Times New Roman', 'Noto Sans CJK SC', 'SimHei', serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  <text x="800" y="55" text-anchor="middle" font-size="26" font-weight="bold" fill="#1F2937">
+    Method Taxonomy
+  </text>
+  <text x="800" y="82" text-anchor="middle" font-size="14" fill="#6B7280" font-style="italic">
+    classification of approaches by inductive bias and learning regime
+  </text>
+
+  <!-- ===== ROOT (depth 0) ===== -->
+  <g>
+    <rect x="640" y="120" width="320" height="80" rx="10"
+          fill="#B197D6" stroke="#8B6CB8" stroke-width="2"/>
+    <text x="800" y="155" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">
+      Machine Learning Methods
+    </text>
+    <text x="800" y="180" text-anchor="middle" font-size="12" fill="#FFFFFF">
+      (supervised, unsupervised, hybrid)
+    </text>
+  </g>
+
+  <!-- vertical drop from root -->
+  <line x1="800" y1="200" x2="800" y2="240" stroke="#6B7280" stroke-width="2"/>
+  <!-- horizontal bar that branches out -->
+  <line x1="250" y1="240" x2="1350" y2="240" stroke="#6B7280" stroke-width="2"/>
+
+  <!-- ===== MID LEVEL (depth 1) — three branches ===== -->
+  <g>
+    <line x1="250" y1="240" x2="250" y2="290" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="100" y="295" width="300" height="80" rx="10"
+          fill="#7BA7D9" stroke="#5687C2" stroke-width="2"/>
+    <text x="250" y="328" text-anchor="middle" font-size="17" font-weight="bold" fill="#FFFFFF">
+      Discriminative Models
+    </text>
+    <text x="250" y="353" text-anchor="middle" font-size="12" fill="#FFFFFF">
+      learn p(y | x) directly
+    </text>
+  </g>
+
+  <g>
+    <line x1="800" y1="240" x2="800" y2="290" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="650" y="295" width="300" height="80" rx="10"
+          fill="#7BA7D9" stroke="#5687C2" stroke-width="2"/>
+    <text x="800" y="328" text-anchor="middle" font-size="17" font-weight="bold" fill="#FFFFFF">
+      Generative Models
+    </text>
+    <text x="800" y="353" text-anchor="middle" font-size="12" fill="#FFFFFF">
+      model joint p(x, y)
+    </text>
+  </g>
+
+  <g>
+    <line x1="1350" y1="240" x2="1350" y2="290" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="1200" y="295" width="300" height="80" rx="10"
+          fill="#7BA7D9" stroke="#5687C2" stroke-width="2"/>
+    <text x="1350" y="328" text-anchor="middle" font-size="17" font-weight="bold" fill="#FFFFFF">
+      Self-Supervised
+    </text>
+    <text x="1350" y="353" text-anchor="middle" font-size="12" fill="#FFFFFF">
+      pretext tasks, contrastive
+    </text>
+  </g>
+
+  <!-- ===== LEAVES (depth 2) — children of each mid node ===== -->
+  <!-- Left branch: 3 leaves under Discriminative -->
+  <line x1="250" y1="375" x2="250" y2="420" stroke="#6B7280" stroke-width="2"/>
+  <line x1="125" y1="420" x2="395" y2="420" stroke="#6B7280" stroke-width="2"/>
+  <g>
+    <line x1="135" y1="420" x2="135" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="55" y="465" width="180" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="145" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">CNNs</text>
+    <text x="145" y="522" text-anchor="middle" font-size="11" fill="#4B5563">ResNet, EfficientNet</text>
+    <text x="145" y="540" text-anchor="middle" font-size="11" fill="#4B5563">images, audio</text>
+  </g>
+  <g>
+    <line x1="255" y1="420" x2="255" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="245" y="465" width="160" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="325" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Transformers</text>
+    <text x="325" y="522" text-anchor="middle" font-size="11" fill="#4B5563">BERT, ViT</text>
+    <text x="325" y="540" text-anchor="middle" font-size="11" fill="#4B5563">sequences, vision</text>
+  </g>
+  <g>
+    <line x1="385" y1="420" x2="385" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="415" y="465" width="160" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="495" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Tree Ensembles</text>
+    <text x="495" y="522" text-anchor="middle" font-size="11" fill="#4B5563">XGBoost, RF</text>
+    <text x="495" y="540" text-anchor="middle" font-size="11" fill="#4B5563">tabular data</text>
+  </g>
+
+  <!-- Center branch: 3 leaves under Generative -->
+  <line x1="800" y1="375" x2="800" y2="420" stroke="#6B7280" stroke-width="2"/>
+  <line x1="650" y1="420" x2="950" y2="420" stroke="#6B7280" stroke-width="2"/>
+  <g>
+    <line x1="670" y1="420" x2="670" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="590" y="465" width="160" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="670" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">VAEs</text>
+    <text x="670" y="522" text-anchor="middle" font-size="11" fill="#4B5563">latent variable</text>
+    <text x="670" y="540" text-anchor="middle" font-size="11" fill="#4B5563">structured priors</text>
+  </g>
+  <g>
+    <line x1="800" y1="420" x2="800" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="720" y="465" width="160" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="800" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">GANs</text>
+    <text x="800" y="522" text-anchor="middle" font-size="11" fill="#4B5563">adversarial training</text>
+    <text x="800" y="540" text-anchor="middle" font-size="11" fill="#4B5563">image synthesis</text>
+  </g>
+  <g>
+    <line x1="930" y1="420" x2="930" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="850" y="465" width="160" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="930" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Diffusion</text>
+    <text x="930" y="522" text-anchor="middle" font-size="11" fill="#4B5563">DDPM, score-based</text>
+    <text x="930" y="540" text-anchor="middle" font-size="11" fill="#4B5563">SOTA image / video</text>
+  </g>
+
+  <!-- Right branch: 2 leaves under Self-Supervised -->
+  <line x1="1350" y1="375" x2="1350" y2="420" stroke="#6B7280" stroke-width="2"/>
+  <line x1="1230" y1="420" x2="1470" y2="420" stroke="#6B7280" stroke-width="2"/>
+  <g>
+    <line x1="1250" y1="420" x2="1250" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="1170" y="465" width="160" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="1250" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Contrastive</text>
+    <text x="1250" y="522" text-anchor="middle" font-size="11" fill="#4B5563">SimCLR, MoCo</text>
+    <text x="1250" y="540" text-anchor="middle" font-size="11" fill="#4B5563">pairwise loss</text>
+  </g>
+  <g>
+    <line x1="1450" y1="420" x2="1450" y2="460" stroke="#6B7280" stroke-width="2"
+          marker-end="url(#arrow)"/>
+    <rect x="1370" y="465" width="160" height="100" rx="8"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="1.8"/>
+    <text x="1450" y="500" text-anchor="middle" font-size="14" font-weight="600" fill="#1F2937">Masked Modeling</text>
+    <text x="1450" y="522" text-anchor="middle" font-size="11" fill="#4B5563">MAE, BEiT</text>
+    <text x="1450" y="540" text-anchor="middle" font-size="11" fill="#4B5563">reconstruction</text>
+  </g>
+
+  <!-- legend at bottom -->
+  <g>
+    <rect x="500" y="700" width="600" height="120" rx="10"
+          fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1.5"/>
+    <text x="800" y="730" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">
+      Color by depth
+    </text>
+
+    <rect x="540" y="750" width="22" height="22" rx="4" fill="#B197D6"/>
+    <text x="572" y="767" font-size="13" fill="#1F2937">Root concept</text>
+
+    <rect x="720" y="750" width="22" height="22" rx="4" fill="#7BA7D9"/>
+    <text x="752" y="767" font-size="13" fill="#1F2937">Family / branch</text>
+
+    <rect x="920" y="750" width="22" height="22" rx="4" fill="#88C088"/>
+    <text x="952" y="767" font-size="13" fill="#1F2937">Concrete method</text>
+
+    <text x="800" y="800" text-anchor="middle" font-size="12" fill="#6B7280" font-style="italic">
+      Sub-trees may extend further; here truncated at L2 for readability.
+    </text>
+  </g>
+</svg>

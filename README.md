@@ -39,7 +39,7 @@ git clone https://github.com/Archer-Ming/TediousPlotting-skills.git
 | Skill                            | 类型                 | 说明                                                 | 状态 |
 | -------------------------------- | -------------------- | ---------------------------------------------------- | ---- |
 | [plot-skill](./skills/plot-skill)   | 覆盖各类型的常见图表 | 用于数据统计分析，趋势，分布，对比，相关性，误差范围 | 完善 |
-| [frame-skill](./skills/frame-skill) | 期刊论文架构图       | 用于流程原理布局，模块架构，思维步骤决策             | 草稿 |
+| [frame-skill](./skills/frame-skill) | 期刊论文架构图       | 用于流程原理布局，模块架构，思维步骤决策             | 测试 |
 
 ---
 
@@ -105,16 +105,31 @@ plot-skill/        针对SCI论文，竞赛，PPT的高质量配图 --> PNG
 
 ### 特色
 
-   规范了期刊级别架构图的线框配色，整体布局平衡感，字体清晰度等设置。
+   严格规范了期刊级别架构图的线框配色组合，整体布局平衡感，字体等设置。
 
-  提供了大量的SCI一二区和Nature等知名期刊的高引用论文的架构图，供大模型学习捕捉风格，布局。
+  针对不同的用途（IEEE，Nature，SCI）提供了六种布局和五种高审美配色，供大模型学习捕捉风格，布局。
+
+| 风格     | 系列色                           | 领域           |
+| -------- | -------------------------------- | -------------- |
+| 学术柔和 | 蓝色 薄荷 杏色 粉色 薰衣草 灰色  | ML/DL/计算机   |
+| 自然科学 | 蓝色 绿色 琥珀色 玫瑰 石板       | 物理学/数学    |
+| 机械工程 | 钢青色 蓝绿色 橙色 深红色 石墨色 | 材料/机械/工程 |
+| 温暖生物 | 赤陶 鼠尾草色 沙色 石色          | 生物/化学/医学 |
+| 简约对比 | 灰色 强调色                      | 0V0            |
 
 ### 骨架
 
 ```
-frame-skill/        针对SCI论文，竞赛的高质量架构图 --> PNG
+frame-skill/                               针对SCI论文，竞赛的高质量架构图,流程图等 --> PNG SVG PPTX
+├── references/
+|   ├── styles.md                          六种布局架构类型
+|   ├── style_01_layered_network.svg       with more frame... 细磨
+|
+├── palettes.md                            五种风格配色
+├── render_helpers.py                         SVG转PPTX，PNG脚本
+|
 ├── assets/ 
-|   ├── reference1.png    with more frame...
+|   ├── reference1.png                     with more frame... 粗磨
 |   
 |   
 ├── SKILL.md    规则限制

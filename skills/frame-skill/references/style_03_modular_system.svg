@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  STYLE 03 · MODULAR SYSTEM
+  Pattern: grid/network of components with explicit "talks-to" links (not a strict left-to-right flow).
+  Use for: software/system architectures, microservice diagrams, hardware-software stacks.
+  Palette: Pastel Academic. Font: Times New Roman + CJK.
+
+  Notable element: a central "core" module that everything connects through.
+  Coordinate system: 1400 x 1000 viewBox.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1000"
+     font-family="'Times New Roman', 'Noto Sans CJK SC', 'SimHei', serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+    <marker id="arrow_both_start" viewBox="0 0 10 10" refX="1" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M10,0 L0,5 L10,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  <text x="700" y="50" text-anchor="middle" font-size="26" font-weight="bold" fill="#1F2937">
+    System Architecture Overview
+  </text>
+
+  <!-- ===== LAYER BAND: UI (top) ===== -->
+  <rect x="80" y="100" width="1240" height="170" rx="14"
+        fill="#DCE7F5" stroke="#7BA7D9" stroke-width="2"/>
+  <text x="105" y="130" font-size="16" font-weight="bold" fill="#1F2937">User Interface Layer</text>
+
+  <g>
+    <rect x="140" y="155" width="220" height="90" rx="6" fill="#7BA7D9"/>
+    <text x="250" y="195" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Web Client</text>
+    <text x="250" y="218" text-anchor="middle" font-size="12" fill="#FFFFFF">React · Browser</text>
+  </g>
+  <g>
+    <rect x="400" y="155" width="220" height="90" rx="6" fill="#7BA7D9"/>
+    <text x="510" y="195" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Mobile App</text>
+    <text x="510" y="218" text-anchor="middle" font-size="12" fill="#FFFFFF">iOS · Android</text>
+  </g>
+  <g>
+    <rect x="660" y="155" width="220" height="90" rx="6" fill="#7BA7D9"/>
+    <text x="770" y="195" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">CLI Tool</text>
+    <text x="770" y="218" text-anchor="middle" font-size="12" fill="#FFFFFF">Python · scriptable</text>
+  </g>
+  <g>
+    <rect x="920" y="155" width="220" height="90" rx="6" fill="#7BA7D9"/>
+    <text x="1030" y="195" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">External API</text>
+    <text x="1030" y="218" text-anchor="middle" font-size="12" fill="#FFFFFF">3rd-party consumers</text>
+  </g>
+
+  <!-- ===== CENTRAL CORE: ORCHESTRATOR ===== -->
+  <rect x="80" y="320" width="1240" height="200" rx="14"
+        fill="#FFE0CC" stroke="#F0A776" stroke-width="2"/>
+  <text x="105" y="350" font-size="16" font-weight="bold" fill="#1F2937">Core / Orchestration</text>
+
+  <!-- API Gateway -->
+  <g>
+    <rect x="130" y="380" width="260" height="110" rx="6" fill="#F0A776"/>
+    <text x="260" y="420" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">API Gateway</text>
+    <text x="260" y="445" text-anchor="middle" font-size="12" fill="#FFFFFF">auth · rate-limit · routing</text>
+    <text x="260" y="465" text-anchor="middle" font-size="12" fill="#FFFFFF">TLS termination</text>
+  </g>
+
+  <!-- Scheduler -->
+  <g>
+    <rect x="430" y="380" width="260" height="110" rx="6" fill="#F0A776"/>
+    <text x="560" y="420" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Job Scheduler</text>
+    <text x="560" y="445" text-anchor="middle" font-size="12" fill="#FFFFFF">priority queue</text>
+    <text x="560" y="465" text-anchor="middle" font-size="12" fill="#FFFFFF">retry &amp; back-off</text>
+  </g>
+
+  <!-- Event Bus -->
+  <g>
+    <rect x="730" y="380" width="260" height="110" rx="6" fill="#F0A776"/>
+    <text x="860" y="420" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Event Bus</text>
+    <text x="860" y="445" text-anchor="middle" font-size="12" fill="#FFFFFF">pub / sub</text>
+    <text x="860" y="465" text-anchor="middle" font-size="12" fill="#FFFFFF">at-least-once delivery</text>
+  </g>
+
+  <!-- Auth Service -->
+  <g>
+    <rect x="1030" y="380" width="260" height="110" rx="6" fill="#F0A776"/>
+    <text x="1160" y="420" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Auth Service</text>
+    <text x="1160" y="445" text-anchor="middle" font-size="12" fill="#FFFFFF">OAuth 2.0 · JWT</text>
+    <text x="1160" y="465" text-anchor="middle" font-size="12" fill="#FFFFFF">RBAC policies</text>
+  </g>
+
+  <!-- ===== LAYER BAND: WORKERS ===== -->
+  <rect x="80" y="570" width="1240" height="170" rx="14"
+        fill="#D6EBD6" stroke="#88C088" stroke-width="2"/>
+  <text x="105" y="600" font-size="16" font-weight="bold" fill="#1F2937">Compute Workers</text>
+
+  <g>
+    <rect x="140" y="625" width="220" height="90" rx="6" fill="#88C088"/>
+    <text x="250" y="665" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Ingest Worker</text>
+    <text x="250" y="688" text-anchor="middle" font-size="12" fill="#FFFFFF">batch + stream</text>
+  </g>
+  <g>
+    <rect x="400" y="625" width="220" height="90" rx="6" fill="#88C088"/>
+    <text x="510" y="665" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Training Worker</text>
+    <text x="510" y="688" text-anchor="middle" font-size="12" fill="#FFFFFF">GPU cluster</text>
+  </g>
+  <g>
+    <rect x="660" y="625" width="220" height="90" rx="6" fill="#88C088"/>
+    <text x="770" y="665" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Inference Worker</text>
+    <text x="770" y="688" text-anchor="middle" font-size="12" fill="#FFFFFF">CPU / GPU pool</text>
+  </g>
+  <g>
+    <rect x="920" y="625" width="220" height="90" rx="6" fill="#88C088"/>
+    <text x="1030" y="665" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Analytics Worker</text>
+    <text x="1030" y="688" text-anchor="middle" font-size="12" fill="#FFFFFF">scheduled reports</text>
+  </g>
+
+  <!-- ===== LAYER BAND: STORAGE ===== -->
+  <rect x="80" y="790" width="1240" height="170" rx="14"
+        fill="#E5D9F2" stroke="#B197D6" stroke-width="2"/>
+  <text x="105" y="820" font-size="16" font-weight="bold" fill="#1F2937">Persistence Layer</text>
+
+  <g>
+    <rect x="170" y="845" width="240" height="90" rx="6" fill="#B197D6"/>
+    <text x="290" y="885" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Postgres DB</text>
+    <text x="290" y="908" text-anchor="middle" font-size="12" fill="#FFFFFF">structured records</text>
+  </g>
+  <g>
+    <rect x="455" y="845" width="240" height="90" rx="6" fill="#B197D6"/>
+    <text x="575" y="885" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Object Storage</text>
+    <text x="575" y="908" text-anchor="middle" font-size="12" fill="#FFFFFF">S3-compatible blobs</text>
+  </g>
+  <g>
+    <rect x="740" y="845" width="240" height="90" rx="6" fill="#B197D6"/>
+    <text x="860" y="885" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Redis Cache</text>
+    <text x="860" y="908" text-anchor="middle" font-size="12" fill="#FFFFFF">hot keys, sessions</text>
+  </g>
+  <g>
+    <rect x="1025" y="845" width="240" height="90" rx="6" fill="#B197D6"/>
+    <text x="1145" y="885" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">Audit Log</text>
+    <text x="1145" y="908" text-anchor="middle" font-size="12" fill="#FFFFFF">append-only</text>
+  </g>
+
+  <!-- ===== Inter-layer arrows (UI → Core) ===== -->
+  <g stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <line x1="250" y1="246" x2="260" y2="378"/>
+    <line x1="510" y1="246" x2="500" y2="378"/>
+    <line x1="770" y1="246" x2="780" y2="378"/>
+    <line x1="1030" y1="246" x2="1020" y2="378"/>
+  </g>
+
+  <!-- ===== Inter-layer arrows (Core → Workers) ===== -->
+  <g stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <line x1="260" y1="491" x2="250" y2="623"/>
+    <line x1="560" y1="491" x2="510" y2="623"/>
+    <line x1="860" y1="491" x2="770" y2="623"/>
+    <line x1="1160" y1="491" x2="1030" y2="623"/>
+  </g>
+
+  <!-- ===== Workers <-> Storage: shown as two parallel offset arrows (one each way) ===== -->
+  <g stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <!-- worker → storage (down) -->
+    <line x1="245" y1="716" x2="285" y2="843"/>
+    <line x1="505" y1="716" x2="570" y2="843"/>
+    <line x1="765" y1="716" x2="855" y2="843"/>
+    <line x1="1025" y1="716" x2="1140" y2="843"/>
+    <!-- storage → worker (up) -->
+    <line x1="295" y1="843" x2="255" y2="716"/>
+    <line x1="580" y1="843" x2="515" y2="716"/>
+    <line x1="865" y1="843" x2="775" y2="716"/>
+    <line x1="1150" y1="843" x2="1035" y2="716"/>
+  </g>
+</svg>

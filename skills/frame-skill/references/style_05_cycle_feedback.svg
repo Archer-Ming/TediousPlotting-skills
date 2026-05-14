@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  STYLE 05 · CYCLE / FEEDBACK
+  Pattern: closed loop. Steps arranged around a central axis, curved arrows close the cycle.
+  Use for: training loops, iterative algorithms, control systems, PDCA cycles, EM-style methods.
+  Palette: Pastel Academic. Font: Times New Roman + CJK.
+
+  Coordinate system: 1400 x 1000 viewBox.
+  Layout: 4 nodes at compass positions around a hub.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1000"
+     font-family="'Times New Roman', 'Noto Sans CJK SC', 'SimHei', serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  <text x="700" y="55" text-anchor="middle" font-size="26" font-weight="bold" fill="#1F2937">
+    Iterative Training Cycle
+  </text>
+  <text x="700" y="82" text-anchor="middle" font-size="14" fill="#6B7280" font-style="italic">
+    repeat until convergence or max epochs reached
+  </text>
+
+  <!-- ===== HUB (center) ===== -->
+  <circle cx="700" cy="500" r="105"
+          fill="#FFFFFF" stroke="#B197D6" stroke-width="2.5"/>
+  <text x="700" y="488" text-anchor="middle" font-size="18" font-weight="bold" fill="#1F2937">
+    Model
+  </text>
+  <text x="700" y="513" text-anchor="middle" font-size="13" fill="#4B5563">parameters θ</text>
+  <text x="700" y="535" text-anchor="middle" font-size="12" fill="#6B7280" font-style="italic">
+    updated each epoch
+  </text>
+
+  <!-- ===== NORTH NODE: Forward Pass ===== -->
+  <g>
+    <rect x="540" y="170" width="320" height="120" rx="14"
+          fill="#DCE7F5" stroke="#7BA7D9" stroke-width="2.5"/>
+    <text x="700" y="208" text-anchor="middle" font-size="18" font-weight="bold" fill="#1F2937">
+      ① Forward Pass
+    </text>
+    <text x="700" y="240" text-anchor="middle" font-size="13" fill="#1F2937">
+      compute predictions ŷ = f(x; θ)
+    </text>
+    <text x="700" y="265" text-anchor="middle" font-size="13" fill="#1F2937">
+      on batch B ~ training set
+    </text>
+  </g>
+
+  <!-- ===== EAST NODE: Loss ===== -->
+  <g>
+    <rect x="1010" y="440" width="320" height="120" rx="14"
+          fill="#FFE0CC" stroke="#F0A776" stroke-width="2.5"/>
+    <text x="1170" y="478" text-anchor="middle" font-size="18" font-weight="bold" fill="#1F2937">
+      ② Compute Loss
+    </text>
+    <text x="1170" y="510" text-anchor="middle" font-size="13" fill="#1F2937">
+      L(θ) = E[(ŷ − y)²] + λR(θ)
+    </text>
+    <text x="1170" y="535" text-anchor="middle" font-size="13" fill="#1F2937">
+      tracked on train &amp; val splits
+    </text>
+  </g>
+
+  <!-- ===== SOUTH NODE: Backprop ===== -->
+  <g>
+    <rect x="540" y="710" width="320" height="120" rx="14"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="2.5"/>
+    <text x="700" y="748" text-anchor="middle" font-size="18" font-weight="bold" fill="#1F2937">
+      ③ Backpropagation
+    </text>
+    <text x="700" y="780" text-anchor="middle" font-size="13" fill="#1F2937">
+      compute ∇θ L via autograd
+    </text>
+    <text x="700" y="805" text-anchor="middle" font-size="13" fill="#1F2937">
+      gradients flow back through layers
+    </text>
+  </g>
+
+  <!-- ===== WEST NODE: Update ===== -->
+  <g>
+    <rect x="70" y="440" width="320" height="120" rx="14"
+          fill="#E5D9F2" stroke="#B197D6" stroke-width="2.5"/>
+    <text x="230" y="478" text-anchor="middle" font-size="18" font-weight="bold" fill="#1F2937">
+      ④ Parameter Update
+    </text>
+    <text x="230" y="510" text-anchor="middle" font-size="13" fill="#1F2937">
+      θ ← θ − η · ∇θ L
+    </text>
+    <text x="230" y="535" text-anchor="middle" font-size="13" fill="#1F2937">
+      Adam optimizer, η = 1e−4
+    </text>
+  </g>
+
+  <!-- ===== Curved arrows closing the cycle (clockwise) ===== -->
+  <!-- N → E -->
+  <path d="M 860 250 Q 1100 290 1170 440"
+        fill="none" stroke="#6B7280" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <!-- E → S -->
+  <path d="M 1170 560 Q 1100 710 860 770"
+        fill="none" stroke="#6B7280" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <!-- S → W -->
+  <path d="M 540 770 Q 300 710 230 560"
+        fill="none" stroke="#6B7280" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <!-- W → N -->
+  <path d="M 230 440 Q 300 290 540 250"
+        fill="none" stroke="#6B7280" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- ===== Hub-to-node connectors (subtle, showing model is read/written at each step) ===== -->
+  <g stroke="#B197D6" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.55">
+    <line x1="700" y1="395" x2="700" y2="295"/>
+    <line x1="800" y1="500" x2="1005" y2="500"/>
+    <line x1="700" y1="605" x2="700" y2="705"/>
+    <line x1="595" y1="500" x2="395" y2="500"/>
+  </g>
+
+  <!-- ===== Exit condition box (the loop CAN terminate) ===== -->
+  <g>
+    <rect x="540" y="900" width="320" height="60" rx="30"
+          fill="#FAD6D6" stroke="#E89090" stroke-width="2"/>
+    <text x="700" y="938" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">
+      ★ convergence reached → exit
+    </text>
+  </g>
+  <path d="M 700 830 L 700 900" stroke="#9CA3AF" stroke-width="2"
+        stroke-dasharray="6,4" marker-end="url(#arrow)"/>
+  <text x="720" y="870" font-size="12" fill="#6B7280" font-style="italic">
+    if val loss plateau ≥ 10 epochs
+  </text>
+
+  <!-- ===== Cycle direction indicator (placed inside hub area) ===== -->
+  <text x="700" y="350" text-anchor="middle" font-size="12" fill="#9CA3AF" font-style="italic">
+    ↻ clockwise
+  </text>
+</svg>

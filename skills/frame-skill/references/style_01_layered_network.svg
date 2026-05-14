@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  STYLE 01 · LAYERED NETWORK
+  Pattern: multi-stage architecture, each stage is a pastel container holding saturated module blocks.
+  Use for: neural network diagrams, multi-stage processing pipelines with grouped sub-blocks.
+  Palette: Pastel Academic. Font: Times New Roman + CJK.
+
+  Coordinate system: 1600 x 900 viewBox.
+  Container pattern: rounded rect, rx=14, fill=palette.fill, stroke=palette.solid, stroke-width=2.
+  Module pattern: rounded rect, rx=6, fill=palette.solid (or fill for lighter), stroke=palette.solid darker.
+  Arrows: stroke=#6B7280, stroke-width=2.2, marker-end=arrowhead.
+  Skip arrows: stroke=#9CA3AF, dasharray=6,4.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900"
+     font-family="'Times New Roman', 'Noto Sans CJK SC', 'SimHei', serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+    <marker id="arrow_dash" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  <!-- ============ CONTAINER A: INPUT ============ -->
+  <g id="container-input">
+    <rect x="40" y="60" width="200" height="280" rx="14"
+          fill="#DCE7F5" stroke="#7BA7D9" stroke-width="2"/>
+    <text x="140" y="95" text-anchor="middle"
+          font-size="22" font-weight="bold" fill="#1F2937">Input Layer</text>
+    <!-- module: image placeholder -->
+    <rect x="70" y="120" width="140" height="140" rx="6"
+          fill="#FFFFFF" stroke="#7BA7D9" stroke-width="1.5"/>
+    <text x="140" y="195" text-anchor="middle" font-size="14" fill="#4B5563">[input image]</text>
+    <text x="140" y="290" text-anchor="middle" font-size="14" fill="#4B5563">64 × 64 × 1</text>
+    <text x="140" y="310" text-anchor="middle" font-size="13" fill="#6B7280">(single channel)</text>
+  </g>
+
+  <!-- ============ CONTAINER B: STEM CONV ============ -->
+  <g id="container-stem">
+    <rect x="290" y="60" width="380" height="280" rx="14"
+          fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2"/>
+    <text x="480" y="95" text-anchor="middle"
+          font-size="22" font-weight="bold" fill="#1F2937">Stem Block</text>
+
+    <!-- 4 modules in a row -->
+    <g>
+      <rect x="310" y="140" width="76" height="120" rx="6" fill="#7BA7D9"/>
+      <text x="348" y="195" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF">3×3 Conv</text>
+      <text x="348" y="215" text-anchor="middle" font-size="12" fill="#FFFFFF">stride 1</text>
+    </g>
+    <g>
+      <rect x="394" y="140" width="76" height="120" rx="6" fill="#88C088"/>
+      <text x="432" y="200" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF">BatchNorm</text>
+    </g>
+    <g>
+      <rect x="478" y="140" width="76" height="120" rx="6" fill="#88C088"/>
+      <text x="516" y="200" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF">ReLU</text>
+    </g>
+    <g>
+      <rect x="562" y="140" width="76" height="120" rx="6" fill="#F0A776"/>
+      <text x="600" y="195" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF">2×2 Pool</text>
+      <text x="600" y="215" text-anchor="middle" font-size="12" fill="#FFFFFF">stride 2</text>
+    </g>
+    <text x="480" y="320" text-anchor="middle" font-size="13" fill="#6B7280">output: 32 × 32 × 128</text>
+  </g>
+
+  <!-- ============ CONTAINER C: STAGE 1 (residual) ============ -->
+  <g id="container-stage1">
+    <rect x="720" y="60" width="840" height="280" rx="14"
+          fill="#D6EBD6" stroke="#88C088" stroke-width="2"/>
+    <text x="1140" y="95" text-anchor="middle"
+          font-size="22" font-weight="bold" fill="#1F2937">Residual Stage 1</text>
+    <text x="1140" y="118" text-anchor="middle" font-size="13" fill="#4B5563">3 × standard residual unit</text>
+
+    <!-- residual unit main path -->
+    <g>
+      <rect x="745" y="160" width="70" height="80" rx="6" fill="#7BA7D9"/>
+      <text x="780" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">3×3 Conv</text>
+    </g>
+    <g>
+      <rect x="825" y="160" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="855" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">BN</text>
+    </g>
+    <g>
+      <rect x="895" y="160" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="925" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">ReLU</text>
+    </g>
+    <g>
+      <rect x="965" y="160" width="70" height="80" rx="6" fill="#7BA7D9"/>
+      <text x="1000" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">3×3 Conv</text>
+    </g>
+    <g>
+      <rect x="1045" y="160" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="1075" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">BN</text>
+    </g>
+    <!-- add node -->
+    <circle cx="1140" cy="200" r="14" fill="#FAD6D6" stroke="#E89090" stroke-width="2"/>
+    <text x="1140" y="206" text-anchor="middle" font-size="16" font-weight="bold" fill="#B91C1C">+</text>
+    <!-- ReLU after add -->
+    <g>
+      <rect x="1175" y="160" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="1205" y="205" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">ReLU</text>
+    </g>
+    <!-- dropout -->
+    <g>
+      <rect x="1255" y="160" width="80" height="80" rx="6" fill="#E89090"/>
+      <text x="1295" y="195" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">Dropout</text>
+      <text x="1295" y="215" text-anchor="middle" font-size="11" fill="#FFFFFF">p = 0.3</text>
+    </g>
+
+    <!-- inline connectors between modules (short tick arrows) -->
+    <g stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arrow)">
+      <line x1="815" y1="200" x2="823" y2="200"/>
+      <line x1="885" y1="200" x2="893" y2="200"/>
+      <line x1="955" y1="200" x2="963" y2="200"/>
+      <line x1="1035" y1="200" x2="1043" y2="200"/>
+      <line x1="1105" y1="200" x2="1124" y2="200"/>
+      <line x1="1156" y1="200" x2="1173" y2="200"/>
+      <line x1="1235" y1="200" x2="1253" y2="200"/>
+    </g>
+
+    <!-- skip connection (shortcut) -->
+    <path d="M 780 250 L 780 285 L 1140 285 L 1140 215"
+          fill="none" stroke="#9CA3AF" stroke-width="2"
+          stroke-dasharray="6,4" marker-end="url(#arrow_dash)"/>
+    <text x="960" y="300" text-anchor="middle" font-size="12" font-style="italic" fill="#6B7280">
+      Shortcut (identity)
+    </text>
+
+    <text x="1140" y="325" text-anchor="middle" font-size="13" fill="#6B7280">output: 32 × 32 × 128</text>
+  </g>
+
+  <!-- ============ CONTAINER D: STAGE 2 ============ -->
+  <g id="container-stage2">
+    <rect x="290" y="380" width="840" height="220" rx="14"
+          fill="#FFE0CC" stroke="#F0A776" stroke-width="2"/>
+    <text x="710" y="415" text-anchor="middle"
+          font-size="22" font-weight="bold" fill="#1F2937">Residual Stage 2</text>
+    <text x="710" y="436" text-anchor="middle" font-size="13" fill="#4B5563">
+      3 × residual unit, first unit stride 2 (downsampling)
+    </text>
+
+    <g>
+      <rect x="320" y="460" width="70" height="80" rx="6" fill="#7BA7D9"/>
+      <text x="355" y="505" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">3×3 Conv</text>
+    </g>
+    <g>
+      <rect x="400" y="460" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="430" y="505" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">BN</text>
+    </g>
+    <g>
+      <rect x="470" y="460" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="500" y="505" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">ReLU</text>
+    </g>
+    <g>
+      <rect x="540" y="460" width="70" height="80" rx="6" fill="#7BA7D9"/>
+      <text x="575" y="505" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">3×3 Conv</text>
+    </g>
+    <g>
+      <rect x="620" y="460" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="650" y="505" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">BN</text>
+    </g>
+    <circle cx="715" cy="500" r="14" fill="#FAD6D6" stroke="#E89090" stroke-width="2"/>
+    <text x="715" y="506" text-anchor="middle" font-size="16" font-weight="bold" fill="#B91C1C">+</text>
+    <g>
+      <rect x="750" y="460" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="780" y="505" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">ReLU</text>
+    </g>
+    <g>
+      <rect x="830" y="460" width="80" height="80" rx="6" fill="#E89090"/>
+      <text x="870" y="495" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">Dropout</text>
+      <text x="870" y="513" text-anchor="middle" font-size="11" fill="#FFFFFF">p = 0.3</text>
+    </g>
+
+    <g stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arrow)">
+      <line x1="390" y1="500" x2="398" y2="500"/>
+      <line x1="460" y1="500" x2="468" y2="500"/>
+      <line x1="530" y1="500" x2="538" y2="500"/>
+      <line x1="610" y1="500" x2="618" y2="500"/>
+      <line x1="680" y1="500" x2="699" y2="500"/>
+      <line x1="731" y1="500" x2="748" y2="500"/>
+      <line x1="810" y1="500" x2="828" y2="500"/>
+    </g>
+    <path d="M 355 550 L 355 575 L 715 575 L 715 515"
+          fill="none" stroke="#9CA3AF" stroke-width="2"
+          stroke-dasharray="6,4" marker-end="url(#arrow_dash)"/>
+
+    <text x="710" y="585" text-anchor="middle" font-size="13" fill="#6B7280">
+      output: 16 × 16 × 256 (channels doubled)
+    </text>
+  </g>
+
+  <!-- ============ CONTAINER E: STAGE 3 ============ -->
+  <g id="container-stage3">
+    <rect x="290" y="630" width="840" height="220" rx="14"
+          fill="#FAD6D6" stroke="#E89090" stroke-width="2"/>
+    <text x="710" y="665" text-anchor="middle"
+          font-size="22" font-weight="bold" fill="#1F2937">Residual Stage 3</text>
+    <text x="710" y="686" text-anchor="middle" font-size="13" fill="#4B5563">
+      3 × residual unit, first unit stride 2
+    </text>
+
+    <g>
+      <rect x="320" y="710" width="70" height="80" rx="6" fill="#7BA7D9"/>
+      <text x="355" y="755" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">3×3 Conv</text>
+    </g>
+    <g>
+      <rect x="400" y="710" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="430" y="755" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">BN</text>
+    </g>
+    <g>
+      <rect x="470" y="710" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="500" y="755" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">ReLU</text>
+    </g>
+    <g>
+      <rect x="540" y="710" width="70" height="80" rx="6" fill="#7BA7D9"/>
+      <text x="575" y="755" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">3×3 Conv</text>
+    </g>
+    <g>
+      <rect x="620" y="710" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="650" y="755" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">BN</text>
+    </g>
+    <circle cx="715" cy="750" r="14" fill="#FAD6D6" stroke="#E89090" stroke-width="2"/>
+    <text x="715" y="756" text-anchor="middle" font-size="16" font-weight="bold" fill="#B91C1C">+</text>
+    <g>
+      <rect x="750" y="710" width="60" height="80" rx="6" fill="#88C088"/>
+      <text x="780" y="755" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">ReLU</text>
+    </g>
+    <g>
+      <rect x="830" y="710" width="80" height="80" rx="6" fill="#E89090"/>
+      <text x="870" y="745" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">Dropout</text>
+      <text x="870" y="763" text-anchor="middle" font-size="11" fill="#FFFFFF">p = 0.3</text>
+    </g>
+
+    <g stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arrow)">
+      <line x1="390" y1="750" x2="398" y2="750"/>
+      <line x1="460" y1="750" x2="468" y2="750"/>
+      <line x1="530" y1="750" x2="538" y2="750"/>
+      <line x1="610" y1="750" x2="618" y2="750"/>
+      <line x1="680" y1="750" x2="699" y2="750"/>
+      <line x1="731" y1="750" x2="748" y2="750"/>
+      <line x1="810" y1="750" x2="828" y2="750"/>
+    </g>
+    <path d="M 355 800 L 355 825 L 715 825 L 715 765"
+          fill="none" stroke="#9CA3AF" stroke-width="2"
+          stroke-dasharray="6,4" marker-end="url(#arrow_dash)"/>
+
+    <text x="710" y="835" text-anchor="middle" font-size="13" fill="#6B7280">
+      output: 8 × 8 × 512
+    </text>
+  </g>
+
+  <!-- ============ CONTAINER F: OUTPUT HEAD ============ -->
+  <g id="container-output">
+    <rect x="1180" y="380" width="380" height="470" rx="14"
+          fill="#E5D9F2" stroke="#B197D6" stroke-width="2"/>
+    <text x="1370" y="418" text-anchor="middle"
+          font-size="22" font-weight="bold" fill="#1F2937">Output Head</text>
+
+    <g>
+      <rect x="1220" y="460" width="300" height="70" rx="6" fill="#F0A776"/>
+      <text x="1370" y="492" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">
+        Global Avg Pooling
+      </text>
+      <text x="1370" y="511" text-anchor="middle" font-size="12" fill="#FFFFFF">8 × 8 → 1 × 1</text>
+    </g>
+
+    <line x1="1370" y1="540" x2="1370" y2="572" stroke="#6B7280"
+          stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="1495" y="560" font-size="12" fill="#6B7280">vec: 1×1×512</text>
+
+    <g>
+      <rect x="1220" y="585" width="300" height="70" rx="6" fill="#B197D6"/>
+      <text x="1370" y="617" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">
+        Fully Connected
+      </text>
+      <text x="1370" y="636" text-anchor="middle" font-size="12" fill="#FFFFFF">512 → 18</text>
+    </g>
+
+    <line x1="1370" y1="665" x2="1370" y2="697" stroke="#6B7280"
+          stroke-width="2" marker-end="url(#arrow)"/>
+
+    <g>
+      <rect x="1220" y="710" width="300" height="120" rx="6"
+            fill="#FFFFFF" stroke="#B197D6" stroke-width="1.5"/>
+      <text x="1370" y="745" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">
+        Fidelity Regression Loss
+      </text>
+      <text x="1370" y="785" text-anchor="middle" font-size="16" fill="#1F2937" font-style="italic">
+        L = 1 − |⟨Ψ_pred, Ψ_true⟩|²
+      </text>
+      <text x="1370" y="815" text-anchor="middle" font-size="12" fill="#6B7280">
+        complex inner product
+      </text>
+    </g>
+  </g>
+
+  <!-- ============ LEGEND ============ -->
+  <g id="legend">
+    <rect x="40" y="630" width="230" height="220" rx="10"
+          fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1.5"/>
+    <text x="155" y="660" text-anchor="middle"
+          font-size="16" font-weight="bold" fill="#1F2937">Legend</text>
+
+    <rect x="60" y="680" width="22" height="22" rx="4" fill="#7BA7D9"/>
+    <text x="92" y="697" font-size="13" fill="#1F2937">Convolution</text>
+
+    <rect x="60" y="710" width="22" height="22" rx="4" fill="#88C088"/>
+    <text x="92" y="727" font-size="13" fill="#1F2937">Normalization / Activation</text>
+
+    <rect x="60" y="740" width="22" height="22" rx="4" fill="#F0A776"/>
+    <text x="92" y="757" font-size="13" fill="#1F2937">Pooling</text>
+
+    <rect x="60" y="770" width="22" height="22" rx="4" fill="#E89090"/>
+    <text x="92" y="787" font-size="13" fill="#1F2937">Dropout (p = 0.3)</text>
+
+    <rect x="60" y="800" width="22" height="22" rx="4" fill="#B197D6"/>
+    <text x="92" y="817" font-size="13" fill="#1F2937">Fully connected layer</text>
+
+    <line x1="60" y1="835" x2="80" y2="835" stroke="#9CA3AF"
+          stroke-width="2" stroke-dasharray="6,4"/>
+    <text x="92" y="840" font-size="13" fill="#1F2937">Skip connection</text>
+  </g>
+
+  <!-- ============ INTER-CONTAINER ARROWS ============ -->
+  <g stroke="#6B7280" stroke-width="2.5" fill="none" marker-end="url(#arrow)">
+    <!-- input -> stem -->
+    <line x1="240" y1="200" x2="285" y2="200"/>
+    <!-- stem -> stage1 -->
+    <line x1="670" y1="200" x2="715" y2="200"/>
+    <!-- stage1 -> stage2 (down + back-left) -->
+    <path d="M 1140 345 L 1140 365 L 710 365 L 710 378"/>
+    <!-- stage2 -> stage3 -->
+    <line x1="710" y1="605" x2="710" y2="628"/>
+    <!-- stage3 -> output head -->
+    <path d="M 1130 750 L 1160 750 L 1160 495 L 1178 495"/>
+  </g>
+</svg>
