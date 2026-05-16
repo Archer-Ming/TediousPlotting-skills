@@ -492,6 +492,21 @@ input, textarea, select {
     max-height: 100%;
     display: block;
 }
+/* SVG 输出:让内联 svg 自适应视口 */
+.image-viewport .svg-host {
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.image-viewport .svg-host svg {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    width: auto;
+    display: block;
+}
 .image-placeholder {
     color: #94A3B8;
     font-size: 16px;
@@ -824,6 +839,65 @@ textarea.form-input {
     color: var(--text);
 }
 
+/* SVG 参考模板预览:上图下源码 */
+.svg-ref-preview {
+    width: 100%;
+    background: #F8FAFC;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.svg-ref-render {
+    background: white;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 360px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.svg-ref-render svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+.svg-ref-source {
+    background: #0F172A11;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 200px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--text-muted);
+}
+.ref-type-tag {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.ref-type-tag.svg {
+    color: #047857;
+    background: #D1FAE5;
+    border: 1px solid #6EE7B7;
+}
+.ref-type-tag.text {
+    color: var(--primary-deep);
+    background: var(--secondary-bg);
+    border: 1px solid var(--secondary-border);
+}
+
 /* 状态栏 toast */
 .toast-host {
     position: fixed;
@@ -982,7 +1056,7 @@ textarea.form-input {
             <div class="input-card">
                 <textarea class="chat-input" id="chatInput"
                     placeholder="和 Agent 描述你的绘图需求,Enter 发送 / Shift+Enter 换行。
-例如:用 df 画各组冲击强度的小提琴+箱线图,标题用中文。"></textarea>
+例如:用 df 画小提琴+箱线图;或:画一张双轨对比的架构图(SVG)。"></textarea>
                 <div class="send-row">
                     <button class="btn send" id="btnSend">发送</button>
                 </div>
@@ -1110,7 +1184,7 @@ A,Control,1.2"></textarea>
 
 <!-- 隐藏的文件 input -->
 <input type="file" id="fileSkill" accept=".md,.markdown,.txt" style="display:none" />
-<input type="file" id="fileRef" accept=".md,.markdown,.txt" multiple style="display:none" />
+<input type="file" id="fileRef" accept=".md,.markdown,.txt,.svg,.py,.json" multiple style="display:none" />
 <input type="file" id="fileData" accept=".csv,.txt,.xlsx,.xls,.json" style="display:none" />
 
 <!-- toast 容器 -->
@@ -1120,20 +1194,32 @@ A,Control,1.2"></textarea>
 "use strict";
 
 /* ===========================================================================
- *  SciFigure Agent Studio · Web Edition (single-file)
+ *  SciFigure Agent Studio · Web Edition (single-file, modular)
  *
- *  与原 PyQt 应用一一对应:
- *    config.py        -> Config
- *    skill_manager.py -> Skills
- *    data_model.py    -> DataProject
- *    executor.py      -> Sandbox(Pyodide)
- *    agent.py         -> Agent
- *    workers.py       -> 直接 async/await
- *    widgets.py / app.py -> DOM + 事件
+ *  设计目标:单文件双击即用,但内部按职责清晰分模块,方便维护与扩展。
+ *
+ *  ── 模块地图(按本文件出现顺序) ─────────────────────────────────────────
+ *    [0] Utils          通用工具函数 / DOM 助手 / Toast / Modal
+ *    [1] FileType       文件类型识别(text / svg / python ...)—— 新增
+ *    [2] Config         模型配置持久化           (原 config.py)
+ *    [3] ReferenceMgr   参考模板的类型化封装      —— 新增,支持 SVG
+ *    [4] Skills         技能管理 + prompt 注入    (原 skill_manager.py)
+ *    [5] DataProject    数据加载与画像           (原 data_model.py)
+ *    [6] OutputRenderer 输出渲染(PNG + SVG 统一) —— 新增
+ *    [7] Sandbox        Pyodide 执行器,产出 PNG/SVG (原 executor.py)
+ *    [8] Agent          对话编排 / read_template (原 agent.py)
+ *    [9] UI.*           各栏渲染与事件绑定        (原 widgets.py/app.py)
+ *
+ *  ── 本次改进要点 ───────────────────────────────────────────────────────
+ *    · 中栏可生成 SVG 流程图:LLM 写 Python -> Pyodide 保存 .svg -> 内联渲染
+ *    · 参考模板支持 .svg:作为文本上下文注入 + 渲染预览 + 文件名可被引用
+ *    · JS 内部模块化,新增功能只需改对应模块
  * =========================================================================== */
 
 
-/* ============== 工具函数 ============== */
+/* ===========================================================================
+ *  [0] Utils — 通用工具
+ * =========================================================================== */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 const el = (tag, attrs = {}, children = []) => {
@@ -1185,7 +1271,44 @@ $$(".modal-mask").forEach(m => {
 
 
 /* ===========================================================================
- *  Config (对应 config.py)
+ *  [1] FileType — 文件类型识别
+ *
+ *  集中判断一个参考文件 / 输出文件属于哪类,避免类型逻辑散落各处。
+ *  以后要支持更多类型(如 .mmd Mermaid),只改这一处。
+ * =========================================================================== */
+const FileType = {
+    /** 由文件名推断扩展名(小写,不含点) */
+    ext(filename) {
+        const m = /\.([^.\\/]+)$/.exec(String(filename || ""));
+        return m ? m[1].toLowerCase() : "";
+    },
+
+    /** 判断参考文件类别:'svg' | 'python' | 'text' */
+    refKind(filename, content) {
+        const e = this.ext(filename);
+        if (e === "svg") return "svg";
+        // 容错:无扩展名但内容是 SVG
+        if (!e && /^\s*(<\?xml[\s\S]*?\?>\s*)?<svg[\s>]/i.test(String(content || ""))) {
+            return "svg";
+        }
+        if (e === "py") return "python";
+        return "text";   // md / markdown / txt / json 等都按文本处理
+    },
+
+    /** 是否是 SVG 文本 */
+    isSvg(filename, content) {
+        return this.refKind(filename, content) === "svg";
+    },
+
+    /** 人类可读的类型标签 */
+    label(kind) {
+        return { svg: "SVG", python: "PY", text: "TEXT" }[kind] || "TEXT";
+    },
+};
+
+
+/* ===========================================================================
+ *  [2] Config — 模型配置(对应 config.py)
  * =========================================================================== */
 const Config = {
     KEY: "scifig.config",
@@ -1214,7 +1337,53 @@ const Config = {
 
 
 /* ===========================================================================
- *  Skills (对应 skill_manager.py)
+ *  [3] ReferenceMgr — 参考模板的类型化封装
+ *
+ *  原代码里 references 是裸的 {filename: text}。SVG 进来后需要知道每份
+ *  参考"是什么类型",所以这里集中封装。Skills 模块仍按 {filename: text}
+ *  存储(向后兼容、localStorage 不变),类型在使用时由 FileType 推断。
+ *
+ *  SVG 参考的三种用途(用户全选):
+ *    1. 作为视觉风格模板 —— 注入 system prompt 时附带"这是 SVG 模板"说明
+ *    2. 作为可读上下文   —— SVG 即 XML,正文按文本注入,模型直接读
+ *    3. 文件名可被引用   —— read_template 仍可按文件名取回正文
+ * =========================================================================== */
+const ReferenceMgr = {
+    /** 把一份参考包装成带类型的视图对象 */
+    describe(filename, content) {
+        const kind = FileType.refKind(filename, content);
+        return {
+            filename,
+            content: String(content || ""),
+            kind,                                  // 'svg' | 'python' | 'text'
+            label: FileType.label(kind),
+            size: String(content || "").length,
+            isSvg: kind === "svg",
+        };
+    },
+
+    /** 列出某 skill 下所有参考(带类型) */
+    listOf(skill) {
+        const refs = (skill && skill.references) || {};
+        return Object.entries(refs).map(([fn, txt]) => this.describe(fn, txt));
+    },
+
+    /** 给 read_template 返回内容时,为 SVG 加一层说明,引导模型当模板学习 */
+    wrapForTemplate(view) {
+        if (view.kind === "svg") {
+            return `<svg_template name="${view.filename}">
+说明:以下是一份 SVG 架构图参考模板。请学习它的图形风格、配色、方框/箭头/分组布局,
+忽略其中的具体文字、数据与业务逻辑。你应在生成绘图代码时,产出风格一致的 SVG。
+${view.content}
+</svg_template>`;
+        }
+        return `<template name="${view.filename}">\n${view.content}\n</template>`;
+    },
+};
+
+
+/* ===========================================================================
+ *  [4] Skills — 技能管理(对应 skill_manager.py)
  * =========================================================================== */
 const Skills = {
     KEY: "scifig.skills",
@@ -1346,23 +1515,33 @@ const Skills = {
     enabled() { return this.list.filter(s => s.enabled); },
 
     /** 注入到 system prompt 的整块。
-     *  references 只列出"目录"(文件名 + 摘要),正文不直接注入,
+     *  references 只列出"目录"(文件名 + 类型),正文不直接注入,
      *  让 LLM 通过 read_template 工具按需获取。
+     *  SVG 参考会被标注类型,提示模型这是可学习的图形模板。
      */
     buildPromptSection() {
         const en = this.enabled();
         if (!en.length) return "";
         const blocks = en.map(s => {
-            const refNames = Object.keys(s.references || {});
+            const views = ReferenceMgr.listOf(s);
             let refIndex = "";
-            if (refNames.length) {
-                const items = refNames.map(fn => `  - ${fn}`).join("\n");
+            if (views.length) {
+                const svgCount = views.filter(v => v.isSvg).length;
+                const items = views.map(v => {
+                    const tag = v.isSvg ? " [SVG 图形模板]"
+                              : v.kind === "python" ? " [Python 代码]"
+                              : " [文本]";
+                    return `  - ${v.filename}${tag}`;
+                }).join("\n");
+                const svgHint = svgCount
+                    ? `\n其中 ${svgCount} 份是 SVG 架构图模板:读取后请学习其图形风格与布局,产出风格一致的 SVG。`
+                    : "";
                 refIndex = `\n<references>
-本技能附带 ${refNames.length} 份参考模板文件(已存放在本地,可按需读取,不会自动注入到上下文):
-${items}
+本技能附带 ${views.length} 份参考模板文件(已存放在本地,可按需读取,不会自动注入到上下文):
+${items}${svgHint}
 当你判断某份模板与当前任务相关时,**必须**在回复中输出形如:
 {"kind": "read_template", "filename": "对应文件名", "message": "为什么需要它"}
-系统会把该文件正文返回给你,然后再继续生成绘图代码。
+系统会把该文件正文返回给你,然后再继续生成代码。
 不要凭空记忆模板内容,以本地实际文件为准。
 </references>`;
             }
@@ -1437,7 +1616,7 @@ Figure size 建议:
 
 
 /* ===========================================================================
- *  DataProject (对应 data_model.py)
+ *  [5] DataProject — 数据加载与画像(对应 data_model.py)
  * =========================================================================== */
 const DataProject = {
     name: "",
@@ -1638,9 +1817,96 @@ const DataProject = {
 
 
 /* ===========================================================================
- *  Sandbox (对应 executor.py)
- *  用 Pyodide 在浏览器内执行 LLM 生成的 matplotlib 代码,
- *  对应原版 subprocess 沙箱:数据通过 csv 传入,图通过 png 传出。
+ *  [6] OutputRenderer — 输出渲染(PNG + SVG 统一)
+ *
+ *  Agent 产出物有两种形态:位图(PNG dataURL)和矢量图(SVG 源码字符串)。
+ *  这个模块把"如何把一个产出物画进 DOM / 如何导出"集中起来,
+ *  中栏 UI 只跟它打交道,不必关心类型分支。
+ *
+ *  产出物对象统一结构:
+ *    { type: 'png', dataUrl: 'data:image/png;base64,...' }
+ *    { type: 'svg', svg: '<svg ...>...</svg>', dataUrl: 'data:image/svg+xml;...' }
+ * =========================================================================== */
+const OutputRenderer = {
+    /** 把 SVG 源码转成可用于 <img>/下载 的 dataURL */
+    svgToDataUrl(svgText) {
+        // 用 encodeURIComponent 而非 base64,兼容中文且无需 unescape
+        return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText);
+    },
+
+    /** 由沙箱结果构造统一产出物对象 */
+    makeArtifact(result) {
+        if (result.svg) {
+            return {
+                type: "svg",
+                svg: result.svg,
+                dataUrl: this.svgToDataUrl(result.svg),
+            };
+        }
+        return {
+            type: "png",
+            dataUrl: result.image_data_url,
+        };
+    },
+
+    /** 把产出物渲染进给定的视口元素 */
+    renderInto(viewport, artifact) {
+        viewport.innerHTML = "";
+        if (!artifact) return;
+        if (artifact.type === "svg") {
+            const host = document.createElement("div");
+            host.className = "svg-host";
+            // 直接内联 SVG,矢量、可无限缩放、文字清晰
+            host.innerHTML = this._sanitizeSvg(artifact.svg);
+            viewport.appendChild(host);
+        } else {
+            const img = el("img", { src: artifact.dataUrl, alt: "figure" });
+            viewport.appendChild(img);
+        }
+    },
+
+    /** 渲染一份 SVG 文本到任意容器(用于参考模板预览) */
+    renderSvgPreview(container, svgText) {
+        container.innerHTML = this._sanitizeSvg(svgText);
+    },
+
+    /** 轻量清理:去掉 <script>,防止参考 SVG 里夹带脚本 */
+    _sanitizeSvg(svgText) {
+        let s = String(svgText || "");
+        s = s.replace(/<\?xml[\s\S]*?\?>/gi, "");
+        s = s.replace(/<!DOCTYPE[\s\S]*?>/gi, "");
+        s = s.replace(/<script[\s\S]*?<\/script>/gi, "");
+        s = s.replace(/\son\w+\s*=\s*"[^"]*"/gi, "");
+        s = s.replace(/\son\w+\s*=\s*'[^']*'/gi, "");
+        return s.trim();
+    },
+
+    /** 导出产出物为文件 */
+    download(artifact, basename) {
+        const a = document.createElement("a");
+        if (artifact.type === "svg") {
+            const blob = new Blob([artifact.svg], { type: "image/svg+xml" });
+            a.href = URL.createObjectURL(blob);
+            a.download = `${basename}.svg`;
+        } else {
+            a.href = artifact.dataUrl;
+            a.download = `${basename}.png`;
+        }
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        if (artifact.type === "svg") setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    },
+};
+
+
+/* ===========================================================================
+ *  [7] Sandbox — Pyodide 执行器(对应 executor.py)
+ *  用 Pyodide 在浏览器内执行 LLM 生成的 Python 代码。
+ *  数据通过 csv 传入;输出兼容两类:
+ *    · matplotlib figure        -> 捕获为 PNG
+ *    · 代码写出的 /output.svg    -> 捕获为 SVG 文本(新增)
+ *  也支持 matplotlib 直接 savefig 成 svg。
  * =========================================================================== */
 const Sandbox = {
     pyodide: null,
@@ -1712,16 +1978,27 @@ except Exception:
         return this.loading;
     },
 
-    /** 执行用户代码,返回 {success, image_data_url, error_summary, stderr} */
+    /** 执行用户代码,返回:
+     *  PNG 成功 -> {success, image_data_url, svg:null, ...}
+     *  SVG 成功 -> {success, svg, image_data_url:null, ...}
+     *  失败     -> {success:false, error_summary, stderr}
+     *
+     *  SVG 产出有两条途径,优先级从高到低:
+     *    1. 用户代码把 SVG 写到 /output.svg(适合 Frame Skill 这类直接拼 SVG 的技能)
+     *    2. 用户代码生成 matplotlib figure -> 沙箱按 svg 格式保存
+     *  默认仍是 PNG(matplotlib figure)。
+     */
     async run(code, dataCSV) {
         const py = await this.ensure();
 
         // 把 CSV 推到 pyodide 内
         py.FS.writeFile("/data.csv", dataCSV || "", { encoding: "utf8" });
         py.FS.writeFile("/user_code.py", code, { encoding: "utf8" });
+        // 清理上一轮可能残留的 SVG 输出
+        try { py.FS.unlink("/output.svg"); } catch (e) { /* 不存在则忽略 */ }
 
         const runner = `
-import sys, io, traceback, base64
+import sys, io, os, traceback, base64
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -1733,7 +2010,6 @@ except Exception:
     sns = None
 
 # 中文字体兜底:启动时已经尝试把 Noto Sans CJK SC 注册进 font_manager。
-# 这里把它加到 sans-serif/serif 列表最前面,真正解决中文豆腐块。
 try:
     from matplotlib import rcParams
     from matplotlib import font_manager
@@ -1754,6 +2030,13 @@ except Exception:
 # 拦截 plt.show()
 plt.show = lambda *a, **kw: None
 
+# 清掉旧的 svg 输出文件
+try:
+    if os.path.exists('/output.svg'):
+        os.remove('/output.svg')
+except Exception:
+    pass
+
 # 加载用户数据
 df = None
 try:
@@ -1767,25 +2050,48 @@ except Exception:
 with open("/user_code.py", "r", encoding="utf-8") as f:
     user_code = f.read()
 
+# SVG_OUTPUT_PATH:供技能代码使用的约定输出路径常量
+SVG_OUTPUT_PATH = "/output.svg"
+
 _globals = {
     "__name__": "__main__",
     "df": df,
     "plt": plt, "np": np, "pd": pd, "sns": sns,
+    "SVG_OUTPUT_PATH": SVG_OUTPUT_PATH,
 }
 
-_result = {"ok": False, "img": "", "err": "", "tb": ""}
+# 结果:kind 取 'png' / 'svg'
+_result = {"ok": False, "kind": "png", "img": "", "svg": "", "err": "", "tb": ""}
 try:
     exec(compile(user_code, "<agent_code>", "exec"), _globals)
-    figs = [plt.figure(n) for n in plt.get_fignums()]
-    if not figs:
-        raise RuntimeError("代码未生成 Figure")
-    fig = figs[-1]
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png", dpi=160, bbox_inches="tight")
-    buf.seek(0)
-    _result["img"] = base64.b64encode(buf.read()).decode("ascii")
-    _result["ok"] = True
-    plt.close("all")
+
+    # —— 途径 1:用户代码直接写出了 /output.svg —— 优先 ——
+    svg_text = ""
+    if os.path.exists("/output.svg"):
+        try:
+            with open("/output.svg", "r", encoding="utf-8") as f:
+                svg_text = f.read()
+        except Exception:
+            svg_text = ""
+
+    if svg_text.strip():
+        _result["kind"] = "svg"
+        _result["svg"] = svg_text
+        _result["ok"] = True
+        plt.close("all")
+    else:
+        # —— 途径 2:matplotlib figure —— 默认 PNG ——
+        figs = [plt.figure(n) for n in plt.get_fignums()]
+        if not figs:
+            raise RuntimeError("代码既没有写出 /output.svg,也没有生成 matplotlib Figure")
+        fig = figs[-1]
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", dpi=160, bbox_inches="tight")
+        buf.seek(0)
+        _result["kind"] = "png"
+        _result["img"] = base64.b64encode(buf.read()).decode("ascii")
+        _result["ok"] = True
+        plt.close("all")
 except Exception as e:
     _result["err"] = str(e).splitlines()[-1] if str(e) else type(e).__name__
     _result["tb"] = traceback.format_exc()
@@ -1798,9 +2104,21 @@ _RESULT_JSON = _json.dumps(_result)
             await py.runPythonAsync(runner);
             const j = py.globals.get("_RESULT_JSON");
             const result = JSON.parse(j);
+            if (result.ok && result.kind === "svg") {
+                return {
+                    success: true,
+                    kind: "svg",
+                    svg: result.svg,
+                    image_data_url: null,
+                    error_summary: "",
+                    stderr: "",
+                };
+            }
             if (result.ok) {
                 return {
                     success: true,
+                    kind: "png",
+                    svg: null,
                     image_data_url: "data:image/png;base64," + result.img,
                     error_summary: "",
                     stderr: "",
@@ -1808,6 +2126,8 @@ _RESULT_JSON = _json.dumps(_result)
             }
             return {
                 success: false,
+                kind: null,
+                svg: null,
                 image_data_url: null,
                 error_summary: result.err || "未知错误",
                 stderr: result.tb || "",
@@ -1815,6 +2135,8 @@ _RESULT_JSON = _json.dumps(_result)
         } catch (e) {
             return {
                 success: false,
+                kind: null,
+                svg: null,
                 image_data_url: null,
                 error_summary: String(e).split("\n").slice(-1)[0] || "执行异常",
                 stderr: String(e),
@@ -1825,7 +2147,7 @@ _RESULT_JSON = _json.dumps(_result)
 
 
 /* ===========================================================================
- *  Agent (对应 agent.py)
+ *  [8] Agent — 对话编排(对应 agent.py)
  * =========================================================================== */
 const Agent = {
     history: [],   // [{role, content}]
@@ -1842,8 +2164,8 @@ const Agent = {
     buildSystemPrompt(df) {
         const skillBlock = Skills.buildPromptSection();
         const dataBlock = this._dataBrief(df);
-        return `你是 SciFigure AI Studio 的绘图 Agent,在用户的网页应用中协助科研绘图。
-你必须严格遵守激活的技能(skills)中给出的模板代码、配色、字体、图表风格。
+        return `你是 SciFigure AI Studio 的绘图 Agent,在用户的网页应用中协助科研绘图与架构图绘制。
+你必须严格遵守激活的技能(skills)中给出的模板、配色、字体、图表风格。
 
 【输出格式 - 重要】
 你的每次回复**必须**是一个严格的 JSON 对象,不要使用 Markdown 代码块包裹整个 JSON,不要写任何解释性前缀或后缀。
@@ -1853,31 +2175,50 @@ JSON 字段(根据 kind 选择字段):
 - "code": 当 kind=="code" 时必填。一段完整可独立运行的 Python 代码字符串(放到这里,不是 message)。
 - "filename": 当 kind=="read_template" 时必填。要读取的参考文件名(取自 <references> 列表)。
 
+【两类产出 - 重要】
+本应用的沙箱能捕获两种产出物,你的 Python 代码二选一:
+A. 位图统计图(箱线图/柱状图/散点图/热力图等):用 matplotlib 生成 figure 即可,
+   **不要** plt.show()、**不要** plt.savefig(),沙箱会自动把 figure 存成 PNG。
+B. 矢量架构图 / 流程图 / 框架图(SVG):当任务是画"架构图、框架图、流程图、结构图、
+   工作流、示意图"这类图时,**直接用 Python 拼出完整 SVG 字符串,并写入约定路径**:
+   \`\`\`python
+   svg = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 800"> ... </svg>'''
+   with open(SVG_OUTPUT_PATH, "w", encoding="utf-8") as f:
+       f.write(svg)
+   \`\`\`
+   其中 \`SVG_OUTPUT_PATH\` 是沙箱已注入的全局变量(值为 "/output.svg"),直接用即可。
+   只要 /output.svg 被写入且非空,沙箱就优先把它作为矢量产出渲染(可无限缩放、文字清晰)。
+   也允许用 matplotlib 画图后 \`fig.savefig(SVG_OUTPUT_PATH, format="svg")\` 产出 SVG。
+   架构图任务请优先走 B(SVG),不要用 matplotlib 硬画方框箭头。
+
 【绝对禁止】
 - 把 python 代码塞进 message 字段并把 kind 写成 "answer"——这会让用户看不到图。
 - 复读上一轮 history 里出现过的"已为你生成图表"这种短摘要;每一轮都要重新决策。
 - 在没读模板的情况下,自己生成模板里的代码片段(请先 read_template)。
+- 在同一段代码里既写 /output.svg 又留下 matplotlib figure——只产出一种。
 
 【何时使用 read_template】
-当你即将开始生成一段绘图代码,而 <references> 中存在与该图表类型对应的模板文件时,
+当你即将开始生成绘图代码,而 <references> 中存在与该任务对应的模板文件时,
 **必须**先返回 read_template,把对应文件读到上下文,再在下一轮基于真实模板正文生成 code。
-绝不允许凭印象生成模板里的代码;每次绘图前都要确认你已读到匹配的模板。
+SVG 架构图模板尤其要先读:学习其图形风格、配色、方框/箭头/分组布局,再产出风格一致的 SVG。
+绝不允许凭印象生成模板里的内容;每次绘图前都要确认你已读到匹配的模板。
 若任务很简单(如纯文字回答),或没有匹配模板,可跳过此步,直接 code 或 answer。
 
 【代码编写规则】
-1. 用户的 DataFrame 已经预加载为变量 \`df\`,直接使用,不要 read_csv / read_excel。
-2. 已可用的库:matplotlib.pyplot as plt、numpy as np、pandas as pd、seaborn as sns。**不要**额外 import 网络/系统/文件库。
-3. 代码末尾不要 plt.show()、plt.savefig(),沙箱会自动捕获 figure 保存为 PNG。
-4. 必须包含科研级 rcParams 设置(参见 skills 中的"前提"一节)。
-5. 浏览器版 Pyodide 中已注入 Noto Sans CJK 中文字体,可直接使用中文标签;若仍出现方框,
-   在 message 中提示并改用英文。
-6. 使用 skills 中给出的科研配色(colors 列表);优先按用户指定的图表类型套用对应模板。
+1. 用户的 DataFrame 已经预加载为变量 \`df\`(可能为 None),直接使用,不要 read_csv / read_excel。
+2. 已可用的库:matplotlib.pyplot as plt、numpy as np、pandas as pd、seaborn as sns。**不要**额外 import 网络/系统库。
+3. 位图任务:代码末尾不要 plt.show()、plt.savefig();SVG 任务:把 SVG 写入 SVG_OUTPUT_PATH。
+4. 位图必须包含科研级 rcParams 设置(参见 skills 中的"前提"一节)。
+5. 浏览器版 Pyodide 已注入 Noto Sans CJK 中文字体,可直接使用中文标签;若仍出现方框,
+   在 message 中提示并改用英文。SVG 里中文请用 font-family 包含 'Noto Sans CJK SC','SimHei'。
+6. 使用 skills 中给出的科研配色;优先按用户指定的图表类型套用对应模板。
 7. 对 df 列名做防御性检查:若用户提到的列不存在,从 df.columns 里挑最接近的。
-8. 一段代码只输出一张主图(可以包含 subplots)。
+8. 一次只输出一张主图:位图一个 figure(可含 subplots),或一个 /output.svg。
+9. 架构图/流程图类任务无需数据也能画,df 为 None 时照常生成 SVG。
 
 【对话规则】
 - 当用户询问数据情况、问"适合画什么"等没有明确画图诉求时,kind="answer"。
-- 当用户明确要求绘图、修改图、迭代美化等,先 read_template(若有相关模板),再 code。
+- 当用户明确要求绘图/画架构图/修改图/迭代美化等,先 read_template(若有相关模板),再 code。
 - 用户后续要求"再修改/改成 X"时,记忆上一轮的代码,在其基础上修改而不是重新开始。
 
 ${skillBlock || "(当前未加载任何技能,按通用科研绘图规范处理。)"}
@@ -1938,8 +2279,9 @@ ${dataBlock}`;
 
     /**
      * 主对话流程
-     * onStep(step) 回调:step = {kind, text, code, image_data_url}
-     * 返回 {final_message, image_data_url, code, success}
+     * onStep(step) 回调:step = {kind, text, code, artifact}
+     *   artifact = {type:'png', dataUrl} 或 {type:'svg', svg, dataUrl}
+     * 返回 {final_message, artifact, code, success}
      */
     async chat(userMessage, df, onStep) {
         const emit = (s) => { try { onStep && onStep(s); } catch (e) {} };
@@ -2013,11 +2355,13 @@ ${dataBlock}`;
                     if (++readCount > MAX_READ_ROUNDS) break;
                     continue;
                 }
-                emit({ kind: "thinking", text: `✅ 已加载模板 "${hit.filename}"(${hit.content.length} 字符)` });
+                const hitView = ReferenceMgr.describe(hit.filename, hit.content);
+                const typeNote = hitView.isSvg ? "SVG 图形模板" : "文本模板";
+                emit({ kind: "thinking", text: `✅ 已加载${typeNote} "${hit.filename}"(${hit.content.length} 字符)` });
                 work.push({ role: "assistant", content: raw });
                 work.push({
                     role: "user",
-                    content: `<template name="${hit.filename}">\n${hit.content}\n</template>\n\n以上是你请求的模板正文。请基于它继续完成用户的绘图需求,在下一条回复里返回 kind=="code" 的 JSON。如果还需要更多模板,可以再发一次 read_template。`,
+                    content: `${ReferenceMgr.wrapForTemplate(hitView)}\n\n以上是你请求的模板正文。请基于它继续完成用户的绘图需求,在下一条回复里返回 kind=="code" 的 JSON。如果还需要更多模板,可以再发一次 read_template。`,
                 });
                 if (++readCount > MAX_READ_ROUNDS) {
                     work.push({ role: "user", content: "已达到本轮模板读取上限,请直接生成 code。" });
@@ -2095,22 +2439,21 @@ ${dataBlock}`;
         for (let attempt = 0; attempt <= this.maxRepairRounds; attempt++) {
             const result = await Sandbox.run(code, dataCSV);
             if (result.success) {
+                const artifact = OutputRenderer.makeArtifact(result);
                 emit({
                     kind: "exec_ok",
-                    text: "渲染成功",
+                    text: artifact.type === "svg" ? "矢量图(SVG)渲染成功" : "渲染成功",
                     code,
-                    image_data_url: result.image_data_url,
+                    artifact,
                 });
                 // 关键修复:不再把整段代码塞进 history,只塞一句短摘要。
-                // 否则 LLM 会模仿这种格式,把代码原文当 message 复读,导致下一次"再画一张"
-                // 直接被 LLM 当成 answer 返回那段历史文本(用户看到的就是没真正执行的假图)。
                 const summary = (message || "已为你生成图表。").slice(0, 200);
                 this.history.push({ role: "assistant", content: summary });
                 this.lastSuccessfulCode = code;
                 this.lastSuccessfulSummary = summary;
                 return {
                     final_message: message || "已为你生成图表。",
-                    image_data_url: result.image_data_url,
+                    artifact,
                     code,
                     success: true,
                 };
@@ -2161,10 +2504,10 @@ ${(result.stderr || "").slice(-1500)}
 
 
 /* ===========================================================================
- *  UI 状态
+ *  [9] UI — 各栏渲染与事件绑定(对应 widgets.py / app.py)
  * =========================================================================== */
 const UI = {
-    historyImages: [],   // 每张是 data URL
+    historyArtifacts: [],   // 每个是 {type:'png'|'svg', ...} 统一产出物
     historyCodes: [],
     currentIdx: -1,
     currentThinking: null,
@@ -2267,19 +2610,23 @@ function renderSkills() {
         if (refNames.length === 0) {
             refBox.appendChild(el("div", {
                 class: "ref-empty",
-                text: 'SKILL.md 引用的模板文件(如 reference\\bar_line_box.md)需要在这里上传一次,Agent 才能按需读取。',
+                text: 'SKILL.md 引用的模板文件需要在这里上传一次,Agent 才能按需读取。支持 .md / .txt / .py / .svg —— SVG 架构图模板会被当作图形风格参考。',
             }));
         } else {
             const ul = el("div", { class: "ref-list" });
             for (const fn of refNames) {
+                const view = ReferenceMgr.describe(fn, refs[fn]);
                 const item = el("div", { class: "ref-item" });
+                item.appendChild(el("span", {
+                    class: "ref-type-tag " + (view.isSvg ? "svg" : "text"),
+                    text: view.label,
+                }));
                 item.appendChild(el("span", { class: "ref-name", text: fn }));
-                const sz = String(refs[fn] || "").length;
-                item.appendChild(el("span", { class: "ref-size", text: `${(sz / 1024).toFixed(1)} KB` }));
+                item.appendChild(el("span", { class: "ref-size", text: `${(view.size / 1024).toFixed(1)} KB` }));
                 item.appendChild(el("button", {
                     class: "mini-link",
                     text: "查看",
-                    onclick: () => openRefView(fn, refs[fn]),
+                    onclick: () => openRefView(view),
                 }));
                 item.appendChild(el("button", {
                     class: "mini-link",
@@ -2307,15 +2654,38 @@ function triggerAddReference(skillId) {
     inp.click();
 }
 
-function openRefView(filename, content) {
-    $("#modalSkillTitle").textContent = `参考模板:${filename}`;
-    $("#modalSkillBody").textContent = content;
+/** 查看参考模板。SVG 类型显示"渲染预览 + 源码";其他类型纯文本。
+ *  参数 view 来自 ReferenceMgr.describe()。
+ */
+function openRefView(view) {
+    $("#modalSkillTitle").textContent = `参考模板:${view.filename}（${view.label}）`;
+    const bodyHost = $("#modalSkillBody");
+    if (view.isSvg) {
+        // 切换成 SVG 预览容器
+        bodyHost.className = "svg-ref-preview";
+        bodyHost.textContent = "";
+        const render = el("div", { class: "svg-ref-render" });
+        OutputRenderer.renderSvgPreview(render, view.content);
+        const srcLabel = el("div", {
+            class: "ref-title",
+            text: "SVG 源码(Agent 读取时作为图形风格模板学习):",
+        });
+        const src = el("div", { class: "svg-ref-source", text: view.content });
+        bodyHost.appendChild(render);
+        bodyHost.appendChild(srcLabel);
+        bodyHost.appendChild(src);
+    } else {
+        bodyHost.className = "skill-content-viewer";
+        bodyHost.textContent = view.content;
+    }
     openModal("modalSkill");
 }
 
 function openSkillView(sk) {
     $("#modalSkillTitle").textContent = `技能详情:${sk.name}`;
-    $("#modalSkillBody").textContent = sk.body;
+    const bodyHost = $("#modalSkillBody");
+    bodyHost.className = "skill-content-viewer";   // 复位:可能被 SVG 预览改过
+    bodyHost.textContent = sk.body;
     openModal("modalSkill");
 }
 
@@ -2326,7 +2696,7 @@ function renderTools() {
     list.innerHTML = "";
     const tools = [
         { key: "code_exec", name: "Pyodide 沙箱执行器",
-          desc: "在浏览器内的 WebAssembly Python 中安全执行 Agent 生成的绘图代码。",
+          desc: "在浏览器内的 WebAssembly Python 中安全执行 Agent 生成的代码,支持产出 PNG 位图与 SVG 矢量架构图。",
           enabled: true, available: true },
     ];
     for (const t of tools) {
@@ -2397,12 +2767,11 @@ function renderTablePreview() {
 }
 
 
-/* ============== 中栏 - 图像 ============== */
-function showImage(dataUrl) {
+/* ============== 中栏 - 图像/矢量图 ============== */
+/** 渲染一个统一产出物(PNG 或 SVG)到中栏视口 */
+function showArtifact(artifact) {
     const vp = $("#imageViewport");
-    vp.innerHTML = "";
-    const img = el("img", { src: dataUrl, alt: "figure" });
-    vp.appendChild(img);
+    OutputRenderer.renderInto(vp, artifact);
     // 切到图像 tab
     $$(".tab[data-tab]").forEach(t => t.classList.toggle("active", t.getAttribute("data-tab") === "image"));
     $$(".tab-page").forEach(p => p.classList.toggle("active", p.getAttribute("data-tab") === "image"));
@@ -2418,8 +2787,8 @@ function showPlaceholder() {
 请在右侧对话框告诉 Agent 你想画什么。
 例如:
 • 用 df 画各组的箱线图
-• 把上一张图改成 Nature 风格
-• 给柱状图加误差棒`,
+• 画一张双轨对比的架构图(SVG)
+• 把上一张流程图改成横向布局`,
     }));
 }
 
@@ -2428,46 +2797,40 @@ function updateHistoryNav() {
     const next = $("#btnNextImg");
     const idxLab = $("#imageIndex");
     const meta = $("#imageMeta");
-    if (!UI.historyImages.length) {
+    if (!UI.historyArtifacts.length) {
         idxLab.textContent = "—";
         prev.disabled = true;
         next.disabled = true;
         meta.textContent = "等待 Agent 产出图像…";
         return;
     }
-    idxLab.textContent = `${UI.currentIdx + 1} / ${UI.historyImages.length}`;
+    const cur = UI.historyArtifacts[UI.currentIdx];
+    const tag = cur && cur.type === "svg" ? " · 矢量 SVG" : " · 位图 PNG";
+    idxLab.textContent = `${UI.currentIdx + 1} / ${UI.historyArtifacts.length}`;
     prev.disabled = UI.currentIdx <= 0;
-    next.disabled = UI.currentIdx >= UI.historyImages.length - 1;
-    meta.textContent = `已生成 ${UI.historyImages.length} 张图`;
+    next.disabled = UI.currentIdx >= UI.historyArtifacts.length - 1;
+    meta.textContent = `已生成 ${UI.historyArtifacts.length} 张图${tag}`;
 }
 
-$("#btnPrevImg").onclick = () => {
-    if (!UI.historyImages.length) return;
-    UI.currentIdx = Math.max(0, UI.currentIdx - 1);
-    showImage(UI.historyImages[UI.currentIdx]);
+function gotoArtifact(idx) {
+    if (!UI.historyArtifacts.length) return;
+    UI.currentIdx = Math.max(0, Math.min(UI.historyArtifacts.length - 1, idx));
+    showArtifact(UI.historyArtifacts[UI.currentIdx]);
     $("#codeView").value = UI.historyCodes[UI.currentIdx] || "";
     updateHistoryNav();
-};
-$("#btnNextImg").onclick = () => {
-    if (!UI.historyImages.length) return;
-    UI.currentIdx = Math.min(UI.historyImages.length - 1, UI.currentIdx + 1);
-    showImage(UI.historyImages[UI.currentIdx]);
-    $("#codeView").value = UI.historyCodes[UI.currentIdx] || "";
-    updateHistoryNav();
-};
+}
+
+$("#btnPrevImg").onclick = () => gotoArtifact(UI.currentIdx - 1);
+$("#btnNextImg").onclick = () => gotoArtifact(UI.currentIdx + 1);
 
 $("#btnExportImg").onclick = $("#btnExportTop").onclick = () => {
-    if (UI.currentIdx < 0 || !UI.historyImages[UI.currentIdx]) {
+    const cur = UI.historyArtifacts[UI.currentIdx];
+    if (UI.currentIdx < 0 || !cur) {
         showError("尚未生成任何图像。");
         return;
     }
-    const a = document.createElement("a");
-    a.href = UI.historyImages[UI.currentIdx];
-    a.download = `figure_${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    showToast("已导出当前图像", "success");
+    OutputRenderer.download(cur, `figure_${Date.now()}`);
+    showToast(cur.type === "svg" ? "已导出 SVG 矢量图" : "已导出 PNG 图像", "success");
 };
 
 $("#btnCopyCode").onclick = async () => {
@@ -2607,11 +2970,11 @@ function onAgentStep(step) {
         UI.currentThinking.addCode(step.code);
     } else if (step.kind === "exec_ok") {
         UI.currentThinking.addStep("✅ 渲染成功", step.text || "");
-        if (step.image_data_url) {
-            UI.historyImages.push(step.image_data_url);
+        if (step.artifact) {
+            UI.historyArtifacts.push(step.artifact);
             UI.historyCodes.push(step.code || "");
-            UI.currentIdx = UI.historyImages.length - 1;
-            showImage(step.image_data_url);
+            UI.currentIdx = UI.historyArtifacts.length - 1;
+            showArtifact(step.artifact);
             $("#codeView").value = step.code || "";
             updateHistoryNav();
         }
@@ -2764,23 +3127,27 @@ $("#fileSkill").addEventListener("change", async (e) => {
     }
 });
 
-/* ============== 添加 参考模板文件(多选) ============== */
+/* ============== 添加 参考模板文件(多选,支持 SVG) ============== */
 $("#fileRef").addEventListener("change", async (e) => {
     const skillId = e.target.dataset.skillId;
     const files = Array.from(e.target.files || []);
     if (!skillId || !files.length) { e.target.value = ""; return; }
-    let ok = 0;
+    let ok = 0, svgCount = 0;
     for (const f of files) {
         try {
             const text = await f.text();
             Skills.addReference(skillId, f.name, text);
+            if (FileType.isSvg(f.name, text)) svgCount++;
             ok++;
         } catch (err) {
             showError(`加载 ${f.name} 失败:${err.message}`);
         }
     }
     renderSkills();
-    if (ok) postSystem(`已加载 ${ok} 个参考模板文件,Agent 现在可以按需读取它们。`);
+    if (ok) {
+        const svgNote = svgCount ? `(含 ${svgCount} 份 SVG 图形模板)` : "";
+        postSystem(`已加载 ${ok} 个参考模板文件${svgNote},Agent 现在可以按需读取它们。`);
+    }
     e.target.value = "";
 });
 
