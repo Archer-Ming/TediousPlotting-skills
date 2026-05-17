@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  STYLE 09 · SWIMLANE PROCESS
+  Pattern: horizontal lanes (each = an actor / phase / subsystem), the process
+           flows left-to-right, steps drop into whichever lane owns them,
+           arrows cross lanes when responsibility hands off.
+  Use for: experimental protocols split across roles, data lifecycle by stage,
+           "who does what when", clinical workflows, multi-team pipelines.
+  Palette: Pastel Academic. Font: Times New Roman + CJK.
+
+  Coordinate system: 1600 x 900 viewBox.
+  Lane math: lane label gutter x=40 (w=170). Lanes start x=210.
+             Lane 1 y=120 h=230, Lane 2 y=360 h=230, Lane 3 y=600 h=230.
+  Step blocks: 200 x 110, vertically centred in their lane.
+  Lane fill is the light pastel; step blocks use the same family's solid.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900"
+     font-family="'Noto Sans CJK SC', 'SimHei', 'Times New Roman', serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+    <marker id="arrow_dash" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  <text x="800" y="55" text-anchor="middle" font-size="26" font-weight="bold" fill="#1F2937">
+    实验流程泳道图 Experimental Workflow by Role
+  </text>
+  <text x="800" y="84" text-anchor="middle" font-size="14" fill="#6B7280" font-style="italic">
+    each lane = one team · process flows left → right · dashed = hand-off back
+  </text>
+
+  <!-- ===== LANE 1: Data Team ===== -->
+  <rect x="210" y="120" width="1350" height="230" rx="12"
+        fill="#DCE7F5" stroke="#7BA7D9" stroke-width="2"/>
+  <rect x="40" y="120" width="170" height="230" rx="12"
+        fill="#7BA7D9" stroke="#5687C2" stroke-width="2"/>
+  <text x="125" y="225" text-anchor="middle" font-size="17" font-weight="bold" fill="#FFFFFF">数据团队</text>
+  <text x="125" y="250" text-anchor="middle" font-size="13" fill="#FFFFFF">Data Team</text>
+
+  <g>
+    <rect x="260" y="180" width="200" height="110" rx="8" fill="#7BA7D9"/>
+    <text x="360" y="222" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">采集 Collect</text>
+    <text x="360" y="246" text-anchor="middle" font-size="12" fill="#FFFFFF">N = 1,200 raw</text>
+    <text x="360" y="266" text-anchor="middle" font-size="12" fill="#FFFFFF">samples</text>
+  </g>
+  <g>
+    <rect x="560" y="180" width="200" height="110" rx="8" fill="#7BA7D9"/>
+    <text x="660" y="222" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">清洗 Clean</text>
+    <text x="660" y="246" text-anchor="middle" font-size="12" fill="#FFFFFF">outlier removal</text>
+    <text x="660" y="266" text-anchor="middle" font-size="12" fill="#FFFFFF">normalisation</text>
+  </g>
+
+  <!-- ===== LANE 2: ML Team ===== -->
+  <rect x="210" y="360" width="1350" height="230" rx="12"
+        fill="#D6EBD6" stroke="#88C088" stroke-width="2"/>
+  <rect x="40" y="360" width="170" height="230" rx="12"
+        fill="#88C088" stroke="#5F9F5F" stroke-width="2"/>
+  <text x="125" y="465" text-anchor="middle" font-size="17" font-weight="bold" fill="#FFFFFF">建模团队</text>
+  <text x="125" y="490" text-anchor="middle" font-size="13" fill="#FFFFFF">ML Team</text>
+
+  <g>
+    <rect x="860" y="420" width="200" height="110" rx="8" fill="#88C088"/>
+    <text x="960" y="462" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">训练 Train</text>
+    <text x="960" y="486" text-anchor="middle" font-size="12" fill="#FFFFFF">ResNet-38</text>
+    <text x="960" y="506" text-anchor="middle" font-size="12" fill="#FFFFFF">200 epochs</text>
+  </g>
+  <g>
+    <rect x="1160" y="420" width="200" height="110" rx="8" fill="#88C088"/>
+    <text x="1260" y="462" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">调参 Tune</text>
+    <text x="1260" y="486" text-anchor="middle" font-size="12" fill="#FFFFFF">grid + bayesian</text>
+    <text x="1260" y="506" text-anchor="middle" font-size="12" fill="#FFFFFF">search</text>
+  </g>
+
+  <!-- ===== LANE 3: Eval Team ===== -->
+  <rect x="210" y="600" width="1350" height="230" rx="12"
+        fill="#FFE0CC" stroke="#F0A776" stroke-width="2"/>
+  <rect x="40" y="600" width="170" height="230" rx="12"
+        fill="#F0A776" stroke="#D98A4E" stroke-width="2"/>
+  <text x="125" y="705" text-anchor="middle" font-size="17" font-weight="bold" fill="#FFFFFF">评估团队</text>
+  <text x="125" y="730" text-anchor="middle" font-size="13" fill="#FFFFFF">Eval Team</text>
+
+  <g>
+    <rect x="560" y="660" width="200" height="110" rx="8" fill="#F0A776"/>
+    <text x="660" y="702" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">标注 Label</text>
+    <text x="660" y="726" text-anchor="middle" font-size="12" fill="#FFFFFF">expert review</text>
+    <text x="660" y="746" text-anchor="middle" font-size="12" fill="#FFFFFF">κ = 0.89 agreement</text>
+  </g>
+  <g>
+    <rect x="1160" y="660" width="200" height="110" rx="8" fill="#F0A776"/>
+    <text x="1260" y="702" text-anchor="middle" font-size="15" font-weight="600" fill="#FFFFFF">评测 Evaluate</text>
+    <text x="1260" y="726" text-anchor="middle" font-size="12" fill="#FFFFFF">held-out test set</text>
+    <text x="1260" y="746" text-anchor="middle" font-size="12" fill="#FFFFFF">RMSE · R² · F1</text>
+  </g>
+
+  <!-- ===== FLOW ARROWS ===== -->
+  <!-- within lane 1: collect -> clean -->
+  <line x1="460" y1="235" x2="558" y2="235" stroke="#6B7280" stroke-width="2.5"
+        fill="none" marker-end="url(#arrow)"/>
+  <!-- lane1 clean -> lane3 label (hand-off down) -->
+  <path d="M 660 290 L 660 658" stroke="#6B7280" stroke-width="2.5"
+        fill="none" marker-end="url(#arrow)"/>
+  <text x="675" y="480" font-size="12" fill="#6B7280" font-style="italic">cleaned data</text>
+  <!-- lane3 label -> lane2 train (hand-off up-right) -->
+  <path d="M 760 715 L 810 715 L 810 475 L 858 475" stroke="#6B7280"
+        stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  <text x="815" y="600" font-size="12" fill="#6B7280" font-style="italic">labelled set</text>
+  <!-- within lane 2: train -> tune -->
+  <line x1="1060" y1="475" x2="1158" y2="475" stroke="#6B7280" stroke-width="2.5"
+        fill="none" marker-end="url(#arrow)"/>
+  <!-- lane2 tune -> lane3 evaluate (hand-off down) -->
+  <path d="M 1260 530 L 1260 658" stroke="#6B7280" stroke-width="2.5"
+        fill="none" marker-end="url(#arrow)"/>
+  <text x="1275" y="600" font-size="12" fill="#6B7280" font-style="italic">trained model</text>
+
+  <!-- feedback: evaluate -> tune (dashed, results drive re-tuning) -->
+  <path d="M 1360 690 Q 1470 600 1470 530 Q 1470 475 1362 475"
+        fill="none" stroke="#9CA3AF" stroke-width="2"
+        stroke-dasharray="6,4" marker-end="url(#arrow_dash)"/>
+  <text x="1490" y="585" font-size="12" fill="#6B7280" font-style="italic">metrics</text>
+  <text x="1490" y="602" font-size="12" fill="#6B7280" font-style="italic">feedback</text>
+
+  <!-- ===== Phase markers along the top ===== -->
+  <g>
+    <line x1="510" y1="100" x2="510" y2="115" stroke="#9CA3AF" stroke-width="1.5"/>
+    <line x1="810" y1="100" x2="810" y2="115" stroke="#9CA3AF" stroke-width="1.5"/>
+    <line x1="1110" y1="100" x2="1110" y2="115" stroke="#9CA3AF" stroke-width="1.5"/>
+    <text x="360" y="110" text-anchor="middle" font-size="12" fill="#9CA3AF">Phase I · Prepare</text>
+    <text x="660" y="110" text-anchor="middle" font-size="12" fill="#9CA3AF">Phase II · Build</text>
+    <text x="1235" y="110" text-anchor="middle" font-size="12" fill="#9CA3AF">Phase III · Validate</text>
+  </g>
+</svg>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  STYLE 07 · GRID MATRIX / COMPARISON TABLE
+  Pattern: a 2D grid. Rows = one axis (methods / variants / datasets),
+           columns = another axis (metrics / settings / ablation factors).
+           Cells carry values, checkmarks, or small colour-coded blocks.
+  Use for: ablation studies, method-vs-metric comparison figures, feature
+           matrices, "what supports what" capability tables.
+  Palette: Pastel Academic. Font: Times New Roman + CJK.
+
+  Coordinate system: 1500 x 900 viewBox.
+  Grid math: header row at y=150 (h=70). Body rows start y=220, each h=92.
+             Row-label column x=70 (w=240). Data columns start x=310, each w=215.
+  Convention: highlight the best row/cell with the accent border; use
+              fill (light) for "off"/baseline cells, solid for "on"/winning cells.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 900"
+     font-family="'Noto Sans CJK SC', 'SimHei', 'Times New Roman', serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6B7280"/>
+    </marker>
+  </defs>
+
+  <text x="750" y="55" text-anchor="middle" font-size="26" font-weight="bold" fill="#1F2937">
+    消融实验对比 Ablation Comparison
+  </text>
+  <text x="750" y="84" text-anchor="middle" font-size="14" fill="#6B7280" font-style="italic">
+    rows = model variants · columns = evaluation metrics · best per metric highlighted
+  </text>
+
+  <!-- ===== COLUMN HEADERS ===== -->
+  <!-- top-left corner cell (axis label) -->
+  <rect x="70" y="150" width="240" height="70" rx="8"
+        fill="#E5E7EB" stroke="#9CA3AF" stroke-width="1.5"/>
+  <text x="190" y="183" text-anchor="middle" font-size="14" font-weight="bold" fill="#1F2937">Variant</text>
+  <text x="190" y="203" text-anchor="middle" font-size="11" fill="#6B7280">↓ rows  /  cols →</text>
+
+  <!-- metric header cells -->
+  <g>
+    <rect x="310" y="150" width="215" height="70" rx="8" fill="#DCE7F5" stroke="#7BA7D9" stroke-width="1.5"/>
+    <text x="417" y="183" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">Accuracy</text>
+    <text x="417" y="203" text-anchor="middle" font-size="11" fill="#6B7280">higher better ↑</text>
+  </g>
+  <g>
+    <rect x="535" y="150" width="215" height="70" rx="8" fill="#DCE7F5" stroke="#7BA7D9" stroke-width="1.5"/>
+    <text x="642" y="183" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">Macro-F1</text>
+    <text x="642" y="203" text-anchor="middle" font-size="11" fill="#6B7280">higher better ↑</text>
+  </g>
+  <g>
+    <rect x="760" y="150" width="215" height="70" rx="8" fill="#DCE7F5" stroke="#7BA7D9" stroke-width="1.5"/>
+    <text x="867" y="183" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">Latency</text>
+    <text x="867" y="203" text-anchor="middle" font-size="11" fill="#6B7280">lower better ↓</text>
+  </g>
+  <g>
+    <rect x="985" y="150" width="215" height="70" rx="8" fill="#DCE7F5" stroke="#7BA7D9" stroke-width="1.5"/>
+    <text x="1092" y="183" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">Params</text>
+    <text x="1092" y="203" text-anchor="middle" font-size="11" fill="#6B7280">lower better ↓</text>
+  </g>
+  <g>
+    <rect x="1210" y="150" width="215" height="70" rx="8" fill="#DCE7F5" stroke="#7BA7D9" stroke-width="1.5"/>
+    <text x="1317" y="183" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">Aux. Head</text>
+    <text x="1317" y="203" text-anchor="middle" font-size="11" fill="#6B7280">on / off</text>
+  </g>
+
+  <!-- ===== ROW 1: Baseline ===== -->
+  <rect x="70" y="220" width="240" height="92" rx="8" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="1.5"/>
+  <text x="190" y="262" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">Baseline</text>
+  <text x="190" y="284" text-anchor="middle" font-size="11" fill="#6B7280">ResNet-18, plain</text>
+
+  <rect x="310" y="220" width="215" height="92" rx="6" fill="#DCE7F5"/>
+  <text x="417" y="273" text-anchor="middle" font-size="17" fill="#1F2937">78.2%</text>
+  <rect x="535" y="220" width="215" height="92" rx="6" fill="#DCE7F5"/>
+  <text x="642" y="273" text-anchor="middle" font-size="17" fill="#1F2937">0.74</text>
+  <rect x="760" y="220" width="215" height="92" rx="6" fill="#D6EBD6"/>
+  <text x="867" y="273" text-anchor="middle" font-size="17" fill="#1F2937">8.0 ms</text>
+  <rect x="985" y="220" width="215" height="92" rx="6" fill="#D6EBD6"/>
+  <text x="1092" y="273" text-anchor="middle" font-size="17" fill="#1F2937">11.7 M</text>
+  <rect x="1210" y="220" width="215" height="92" rx="6" fill="#FAD6D6"/>
+  <g stroke="#B91C1C" stroke-width="3.5" stroke-linecap="round">
+    <line x1="1307" y1="256" x2="1327" y2="276"/>
+    <line x1="1327" y1="256" x2="1307" y2="276"/>
+  </g>
+
+  <!-- ===== ROW 2: + Augmentation ===== -->
+  <rect x="70" y="324" width="240" height="92" rx="8" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="1.5"/>
+  <text x="190" y="366" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">+ Augmentation</text>
+  <text x="190" y="388" text-anchor="middle" font-size="11" fill="#6B7280">flip · crop · mixup</text>
+
+  <rect x="310" y="324" width="215" height="92" rx="6" fill="#DCE7F5"/>
+  <text x="417" y="377" text-anchor="middle" font-size="17" fill="#1F2937">83.6%</text>
+  <rect x="535" y="324" width="215" height="92" rx="6" fill="#DCE7F5"/>
+  <text x="642" y="377" text-anchor="middle" font-size="17" fill="#1F2937">0.80</text>
+  <rect x="760" y="324" width="215" height="92" rx="6" fill="#D6EBD6"/>
+  <text x="867" y="377" text-anchor="middle" font-size="17" fill="#1F2937">8.0 ms</text>
+  <rect x="985" y="324" width="215" height="92" rx="6" fill="#D6EBD6"/>
+  <text x="1092" y="377" text-anchor="middle" font-size="17" fill="#1F2937">11.7 M</text>
+  <rect x="1210" y="324" width="215" height="92" rx="6" fill="#FAD6D6"/>
+  <g stroke="#B91C1C" stroke-width="3.5" stroke-linecap="round">
+    <line x1="1307" y1="360" x2="1327" y2="380"/>
+    <line x1="1327" y1="360" x2="1307" y2="380"/>
+  </g>
+
+  <!-- ===== ROW 3: + Aux head ===== -->
+  <rect x="70" y="428" width="240" height="92" rx="8" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="1.5"/>
+  <text x="190" y="470" text-anchor="middle" font-size="15" font-weight="bold" fill="#1F2937">+ Aux. Head</text>
+  <text x="190" y="492" text-anchor="middle" font-size="11" fill="#6B7280">contrastive branch</text>
+
+  <rect x="310" y="428" width="215" height="92" rx="6" fill="#7BA7D9"/>
+  <text x="417" y="481" text-anchor="middle" font-size="17" font-weight="600" fill="#FFFFFF">88.9%</text>
+  <rect x="535" y="428" width="215" height="92" rx="6" fill="#7BA7D9"/>
+  <text x="642" y="481" text-anchor="middle" font-size="17" font-weight="600" fill="#FFFFFF">0.86</text>
+  <rect x="760" y="428" width="215" height="92" rx="6" fill="#F0A776"/>
+  <text x="867" y="481" text-anchor="middle" font-size="17" font-weight="600" fill="#FFFFFF">9.2 ms</text>
+  <rect x="985" y="428" width="215" height="92" rx="6" fill="#F0A776"/>
+  <text x="1092" y="481" text-anchor="middle" font-size="17" font-weight="600" fill="#FFFFFF">12.4 M</text>
+  <rect x="1210" y="428" width="215" height="92" rx="6" fill="#88C088"/>
+  <path d="M 1305 475 L 1314 485 L 1331 463" fill="none"
+        stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- ===== ROW 4: Full model (winner — accent border) ===== -->
+  <rect x="68" y="530" width="1359" height="96" rx="10"
+        fill="none" stroke="#DC2626" stroke-width="3"/>
+  <rect x="70" y="532" width="240" height="92" rx="8" fill="#B197D6" stroke="#8B6CB8" stroke-width="1.5"/>
+  <text x="190" y="572" text-anchor="middle" font-size="15" font-weight="bold" fill="#FFFFFF">Full Model (ours)</text>
+  <text x="190" y="594" text-anchor="middle" font-size="11" fill="#FFFFFF">all components on</text>
+
+  <rect x="310" y="532" width="215" height="92" rx="6" fill="#7BA7D9"/>
+  <text x="417" y="578" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">91.4%</text>
+  <polygon points="404,591 406.4,596.4 412,597 408,601 409.2,607 404,604 398.8,607 400,601 396,597 401.6,596.4"
+           fill="#FDE68A"/>
+  <text x="425" y="603" text-anchor="middle" font-size="11" fill="#FFFFFF">best</text>
+  <rect x="535" y="532" width="215" height="92" rx="6" fill="#7BA7D9"/>
+  <text x="642" y="578" text-anchor="middle" font-size="18" font-weight="bold" fill="#FFFFFF">0.92</text>
+  <polygon points="629,591 631.4,596.4 637,597 633,601 634.2,607 629,604 623.8,607 625,601 621,597 626.6,596.4"
+           fill="#FDE68A"/>
+  <text x="650" y="603" text-anchor="middle" font-size="11" fill="#FFFFFF">best</text>
+  <rect x="760" y="532" width="215" height="92" rx="6" fill="#F0A776"/>
+  <text x="867" y="585" text-anchor="middle" font-size="17" font-weight="600" fill="#FFFFFF">9.5 ms</text>
+  <rect x="985" y="532" width="215" height="92" rx="6" fill="#F0A776"/>
+  <text x="1092" y="585" text-anchor="middle" font-size="17" font-weight="600" fill="#FFFFFF">12.6 M</text>
+  <rect x="1210" y="532" width="215" height="92" rx="6" fill="#88C088"/>
+  <path d="M 1305 579 L 1314 589 L 1331 567" fill="none"
+        stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- callout pointing at the winning row -->
+  <path d="M 1455 690 L 1455 626" fill="none" stroke="#DC2626"
+        stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="1455" y="712" text-anchor="middle" font-size="12" font-weight="bold" fill="#DC2626">selected</text>
+  <text x="1455" y="729" text-anchor="middle" font-size="12" font-weight="bold" fill="#DC2626">config</text>
+
+  <!-- ===== LEGEND ===== -->
+  <g>
+    <rect x="70" y="680" width="1355" height="150" rx="10"
+          fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1.5"/>
+    <text x="100" y="712" font-size="15" font-weight="bold" fill="#1F2937">图例 Legend</text>
+
+    <rect x="100" y="732" width="26" height="26" rx="4" fill="#7BA7D9"/>
+    <text x="138" y="751" font-size="13" fill="#1F2937">指标列 metric value (saturated = strong result)</text>
+
+    <rect x="100" y="772" width="26" height="26" rx="4" fill="#DCE7F5"/>
+    <text x="138" y="791" font-size="13" fill="#1F2937">基线 / 较弱结果 baseline or weaker value (light fill)</text>
+
+    <rect x="640" y="732" width="26" height="26" rx="4" fill="#88C088"/>
+    <path d="M 647 745 L 651 749 L 659 740" fill="none"
+          stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="678" y="751" font-size="13" fill="#1F2937">组件启用 component ON</text>
+
+    <rect x="640" y="772" width="26" height="26" rx="4" fill="#FAD6D6"/>
+    <g stroke="#B91C1C" stroke-width="2.5" stroke-linecap="round">
+      <line x1="648" y1="780" x2="658" y2="790"/>
+      <line x1="658" y1="780" x2="648" y2="790"/>
+    </g>
+    <text x="678" y="791" font-size="13" fill="#1F2937">组件关闭 component OFF</text>
+
+    <rect x="1010" y="732" width="26" height="26" rx="4" fill="none" stroke="#DC2626" stroke-width="3"/>
+    <text x="1048" y="751" font-size="13" fill="#1F2937">最终选定行 winning configuration</text>
+
+    <polygon points="1018,778 1021,785 1029,786 1023,791 1025,799 1018,795 1011,799 1013,791 1007,786 1015,785"
+             fill="#F0A776"/>
+    <text x="1040" y="791" font-size="12" font-style="italic" fill="#6B7280">= best value in that column</text>
+  </g>
+</svg>
