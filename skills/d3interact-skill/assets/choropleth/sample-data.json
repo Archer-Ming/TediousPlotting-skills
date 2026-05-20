@@ -1,0 +1,23 @@
+{
+  "_comment": "Minimal demo geojson with 5 rectangular 'regions'. In real use, replace with actual GeoJSON (Natural Earth countries, US states, etc).",
+  "geojson": {
+    "type": "FeatureCollection",
+    "features": [
+      { "type": "Feature", "properties": { "id": "NW", "name": "Northwest" },
+        "geometry": { "type": "Polygon", "coordinates": [[[0,0],[10,0],[10,10],[0,10],[0,0]]] } },
+      { "type": "Feature", "properties": { "id": "NE", "name": "Northeast" },
+        "geometry": { "type": "Polygon", "coordinates": [[[10,0],[20,0],[20,10],[10,10],[10,0]]] } },
+      { "type": "Feature", "properties": { "id": "SW", "name": "Southwest" },
+        "geometry": { "type": "Polygon", "coordinates": [[[0,10],[10,10],[10,20],[0,20],[0,10]]] } },
+      { "type": "Feature", "properties": { "id": "SE", "name": "Southeast" },
+        "geometry": { "type": "Polygon", "coordinates": [[[10,10],[20,10],[20,20],[10,20],[10,10]]] } },
+      { "type": "Feature", "properties": { "id": "CN", "name": "Center" },
+        "geometry": { "type": "Polygon", "coordinates": [[[7,7],[13,7],[13,13],[7,13],[7,7]]] } }
+    ]
+  },
+  "values": { "NW": 30, "NE": 75, "SW": 45, "SE": 90, "CN": 60 },
+  "idKey": "id",
+  "nameKey": "name",
+  "projection": "mercator",
+  "interpolator": "interpolateYlOrRd"
+}

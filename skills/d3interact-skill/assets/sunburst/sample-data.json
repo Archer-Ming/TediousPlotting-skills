@@ -1,0 +1,39 @@
+{
+  "name": "Global",
+  "children": [
+    { "name": "Asia", "children": [
+      { "name": "China", "children": [
+        { "name": "Power", "value": 4.6 },
+        { "name": "Industry", "value": 3.2 },
+        { "name": "Transport", "value": 1.1 },
+        { "name": "Buildings", "value": 0.9 }
+      ]},
+      { "name": "India", "children": [
+        { "name": "Power", "value": 1.4 },
+        { "name": "Industry", "value": 0.7 },
+        { "name": "Transport", "value": 0.4 }
+      ]},
+      { "name": "Japan", "value": 1.0 },
+      { "name": "Others Asia", "value": 1.6 }
+    ]},
+    { "name": "N. America", "children": [
+      { "name": "USA", "children": [
+        { "name": "Transport", "value": 1.8 },
+        { "name": "Power", "value": 1.6 },
+        { "name": "Industry", "value": 1.0 }
+      ]},
+      { "name": "Canada", "value": 0.65 },
+      { "name": "Mexico", "value": 0.44 }
+    ]},
+    { "name": "Europe", "children": [
+      { "name": "Germany", "value": 0.68 },
+      { "name": "UK", "value": 0.32 },
+      { "name": "France", "value": 0.32 },
+      { "name": "Others EU", "value": 0.91 }
+    ]},
+    { "name": "M. East", "value": 1.65 },
+    { "name": "Africa", "value": 1.37 },
+    { "name": "S. America", "value": 0.98 },
+    { "name": "Oceania", "value": 0.42 }
+  ]
+}

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Radar · 车型 Profile 雷达图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background: radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%), radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); mix-blend-mode:overlay;}
+  .frame{position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  .stage{display:grid; grid-template-columns: 220px 1fr 280px; gap:28px; align-items:start;}
+  .panel{background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line); padding:20px 18px;}
+  .panel h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:14px; display:flex; justify-content:space-between;}
+  .panel h3 .idx{color:var(--accent);}
+  .legend-item{display:flex; align-items:center; gap:10px; padding:8px 0; cursor:pointer; border-bottom:1px dashed var(--line); transition:all .25s;}
+  .legend-item:last-child{border-bottom:none;}
+  .legend-item .sw{width:14px; height:14px; flex-shrink:0; border-radius:2px;}
+  .legend-item .lbl{font-size:13px; flex:1;}
+  .legend-item .ck{width:14px; height:14px; border:1px solid var(--line-2); border-radius:2px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--accent);}
+  .legend-item.active .ck::after{content:"✓";}
+  .legend-item:hover{transform:translateX(3px);}
+  .legend-item:hover .lbl{color:var(--accent);}
+  .controls{margin-top:24px;}
+  .ctrl{display:flex; justify-content:space-between; padding:10px 0; font-size:12px; color:var(--ink-dim); border-bottom:1px dashed var(--line);}
+  .ctrl:last-child{border-bottom:none;}
+  .ctrl span{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase;}
+  .ctrl kbd{font-family:'JetBrains Mono', monospace; font-size:10px; background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink);}
+
+  .chart-wrap{aspect-ratio: 1 / 1; display:flex; justify-content:center; align-items:center;}
+  .chart-wrap svg{width:100%; height:100%; display:block; overflow:visible;}
+
+  .grid-circle{fill:none; stroke:var(--line); stroke-dasharray:2 4;}
+  .grid-axis{stroke:var(--line); stroke-width:0.6;}
+  .grid-tick{font-family:'JetBrains Mono', monospace; font-size:9px; fill:var(--ink-mute);}
+  .axis-label{font-family:'Inter Tight', sans-serif; font-size:12px; fill:var(--ink); font-weight:500;}
+
+  .shape{fill-opacity:.18; stroke-width:1.5px; transition: fill-opacity .25s, stroke-width .25s;}
+  .shape.dim{fill-opacity:.04; stroke-opacity:.18;}
+  .shape.glow{fill-opacity:.38; stroke-width:2.4px; filter: drop-shadow(0 0 8px currentColor);}
+  .shape.hidden{display:none;}
+
+  .dot{cursor:pointer; transition: r .25s, stroke-width .25s;}
+  .dot:hover{stroke-width:2.5px;}
+
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:24px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .role{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .axis-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); position:relative;}
+  .axis-row .ak{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; flex:1;}
+  .axis-row .av{font-family:'Fraunces', serif; font-weight:400; font-size:18px;}
+  .axis-row .bar{position:absolute; left:0; bottom:0; height:1px; background:var(--accent); opacity:.45;}
+  .summary-stats{margin-top:18px; display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .summary-stats .cell{padding:10px 12px; background:var(--bg-2); border:1px solid var(--line);}
+  .summary-stats .cell .k{font-family:'JetBrains Mono', monospace; font-size:9px; color:var(--ink-mute); letter-spacing:.15em; text-transform:uppercase; margin-bottom:4px;}
+  .summary-stats .cell .v{font-family:'Fraunces', serif; font-weight:300; font-size:20px;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:170px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .taxis{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:6px; text-transform:uppercase;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+  @media (max-width: 1100px){.stage{grid-template-columns:1fr;} .frame{padding:32px 24px;} header.title{grid-template-columns:1fr;} .meta{text-align:left;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> 可视化习语 · 雷达图 · 2024</div>
+      <h1>四款车的 <em>性能轮廓</em><br>在六个维度上。</h1>
+      <p class="lede">每个多边形是一款车在六维评分上的「指纹」。点击图例切换显隐，悬停任意顶点读取精确值。</p>
+    </div>
+    <div class="meta">
+      <b>Skill 演示</b> &nbsp; / &nbsp; Radar · D3<br>
+      Dataset · 2024 (示意数据)<br>
+      Idiom · <b>Radar</b> &nbsp; / &nbsp; Marks · polygons
+    </div>
+  </header>
+
+  <div class="stage">
+    <aside class="panel">
+      <h3><span>车型</span><span class="idx">L1</span></h3>
+      <div id="legend"></div>
+      <div class="controls">
+        <h3><span>Interactions</span><span class="idx">03</span></h3>
+        <div class="ctrl"><span>Focus</span><kbd>Hover</kbd></div>
+        <div class="ctrl"><span>Toggle</span><kbd>Click legend</kbd></div>
+        <div class="ctrl"><span>Inspect</span><kbd>Hover vertex</kbd></div>
+      </div>
+    </aside>
+
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="-340 -340 680 680" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <aside class="panel-detail">
+      <h3>Selection</h3>
+      <div class="name" id="dname">— hover a polygon —</div>
+      <div class="role" id="drole">悬停多边形或顶点查看详情</div>
+      <div id="axisList"></div>
+      <div class="summary-stats">
+        <div class="cell"><div class="k">Sum</div><div class="v" id="dsum">—</div></div>
+        <div class="cell"><div class="k">Max</div><div class="v" id="dmax">—</div></div>
+        <div class="cell"><div class="k">Min</div><div class="v" id="dmin">—</div></div>
+        <div class="cell"><div class="k">Spread</div><div class="v" id="dspread">—</div></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="taxis"></div>
+  <div class="trow"><span class="tk">Value</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Rank</span><span class="tv tv-rank"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+const UNIT = "分";
+const data = {"axes": ["Speed", "Power", "Comfort", "Range", "Tech", "Value"], "items": [{"name": "Coupe S", "values": [92, 88, 50, 60, 72, 45]}, {"name": "Wagon X", "values": [62, 70, 88, 85, 78, 72]}, {"name": "SUV Pro", "values": [55, 78, 82, 80, 68, 58]}, {"name": "Compact E", "values": [70, 50, 65, 55, 90, 88]}]};          // { axes: ["A","B",...], items: [{name, values:[...]}] }
+const colorMap = {"Coupe S": "#e36a4a", "Wagon X": "#7fb8a4", "SUV Pro": "#f0c674", "Compact E": "#6a9bd1"};    // { itemName: hex }
+const MAX_VAL = 100;    // numeric scale max (e.g. 100)
+
+const radius = 270;
+const axes = data.axes;
+const n = axes.length;
+const svg = d3.select("#chart");
+
+// Background grid: concentric circles
+const levels = 5;
+for (let i = 1; i <= levels; i++){
+  svg.append("circle").attr("class","grid-circle")
+    .attr("r", radius * i / levels);
+  svg.append("text").attr("class","grid-tick")
+    .attr("x", 4).attr("y", -radius * i / levels + 3)
+    .text(((MAX_VAL * i) / levels).toFixed(0));
+}
+
+// Axes (spokes + labels)
+const angleFor = i => -Math.PI/2 + (i * 2 * Math.PI / n);
+axes.forEach((a, i) => {
+  const ang = angleFor(i);
+  const x = radius * Math.cos(ang);
+  const y = radius * Math.sin(ang);
+  svg.append("line").attr("class","grid-axis")
+    .attr("x1",0).attr("y1",0).attr("x2", x).attr("y2", y);
+  const lx = (radius + 24) * Math.cos(ang);
+  const ly = (radius + 24) * Math.sin(ang);
+  svg.append("text").attr("class","axis-label")
+    .attr("x", lx).attr("y", ly).attr("dy","0.35em")
+    .attr("text-anchor", Math.abs(lx) < 8 ? "middle" : (lx > 0 ? "start" : "end"))
+    .text(a);
+});
+
+// Build polygon path for each item
+function polygonPath(values){
+  return values.map((v, i) => {
+    const r = radius * (v / MAX_VAL);
+    const ang = angleFor(i);
+    return (i === 0 ? "M" : "L") + (r * Math.cos(ang)) + "," + (r * Math.sin(ang));
+  }).join(" ") + "Z";
+}
+
+const visibleItems = new Set(data.items.map(it => it.name));
+
+// Render polygons
+const shapeGroup = svg.append("g");
+const shapes = shapeGroup.selectAll("path.shape").data(data.items).join("path")
+  .attr("class","shape")
+  .attr("d", d => polygonPath(d.values))
+  .attr("fill", d => colorMap[d.name] || "#7fb8a4")
+  .attr("stroke", d => colorMap[d.name] || "#7fb8a4")
+  .attr("color", d => colorMap[d.name] || "#7fb8a4")
+  .on("mouseenter", (e,d) => shapeHover(d))
+  .on("mouseleave", () => clearHl());
+
+// Vertex dots (interactive)
+const dotGroup = svg.append("g");
+const allDots = [];
+data.items.forEach((item) => {
+  item.values.forEach((v, i) => {
+    const ang = angleFor(i);
+    const r = radius * (v / MAX_VAL);
+    const dot = dotGroup.append("circle").attr("class","dot")
+      .attr("cx", r * Math.cos(ang)).attr("cy", r * Math.sin(ang))
+      .attr("r", 4)
+      .attr("fill", colorMap[item.name] || "#7fb8a4")
+      .attr("stroke", "var(--bg-0)").attr("stroke-width", 1.2)
+      .datum({item, axisIdx: i, value: v})
+      .on("mouseenter", (e,d) => dotHover(e, d))
+      .on("mousemove", e => tipMove(e))
+      .on("mouseleave", () => clearHl());
+    allDots.push(dot);
+  });
+});
+
+// Legend
+const legendEl = d3.select("#legend");
+data.items.forEach(it => {
+  const row = legendEl.append("div").attr("class","legend-item active").datum(it)
+    .on("click", function(){
+      if (visibleItems.has(it.name)){ visibleItems.delete(it.name); d3.select(this).classed("active", false);}
+      else { visibleItems.add(it.name); d3.select(this).classed("active", true);}
+      updateVisibility();
+    })
+    .on("mouseenter", () => shapeHover(it))
+    .on("mouseleave", () => clearHl());
+  row.append("div").attr("class","sw").style("background", colorMap[it.name] || "#7fb8a4");
+  row.append("div").attr("class","lbl").text(it.name);
+  row.append("div").attr("class","ck");
+});
+
+function updateVisibility(){
+  shapes.classed("hidden", d => !visibleItems.has(d.name));
+  allDots.forEach(d => d.classed("hidden", function(){ return !visibleItems.has(d3.select(this).datum().item.name);}));
+}
+
+const tip = d3.select("#tip");
+function tipMove(e){ tip.style("left",(e.clientX+18)+"px").style("top",(e.clientY+18)+"px");}
+
+function shapeHover(item){
+  shapes.classed("dim", d => d !== item).classed("glow", false);
+  shapes.filter(d => d === item).classed("glow", true);
+  allDots.forEach(dt => {
+    const d = dt.datum();
+    dt.classed("dim", d.item !== item);
+  });
+  d3.selectAll(".legend-item").style("opacity", d => d === item ? 1 : 0.4);
+  showItemDetail(item);
+}
+
+function dotHover(event, d){
+  shapeHover(d.item);
+  // Compute rank for this axis
+  const sorted = data.items.slice().sort((a,b) => b.values[d.axisIdx] - a.values[d.axisIdx]);
+  const rank = sorted.findIndex(it => it === d.item) + 1;
+  tip.select(".tname").text(d.item.name);
+  tip.select(".taxis").text(axes[d.axisIdx]);
+  tip.select(".tv-val").html(d.value.toFixed(1) + " <span style='color:var(--ink-mute)'>/" + MAX_VAL + " " + UNIT + "</span>");
+  tip.select(".tv-rank").text("#" + rank + " of " + data.items.length);
+  tip.select(".tbar").style("background", colorMap[d.item.name] || "#7fb8a4");
+  tip.classed("on", true);
+  tipMove(event);
+}
+
+function clearHl(){
+  shapes.classed("dim", false).classed("glow", false);
+  allDots.forEach(dt => dt.classed("dim", false));
+  d3.selectAll(".legend-item").style("opacity", 1);
+  tip.classed("on", false);
+  showItemDetail(null);
+}
+
+function showItemDetail(item){
+  if (!item){
+    d3.select("#dname").text("— hover a polygon —");
+    d3.select("#drole").text("Select an item to see its profile");
+    d3.select("#axisList").html("");
+    ["#dsum","#dmax","#dmin","#dspread"].forEach(id => d3.select(id).text("—"));
+    return;
+  }
+  d3.select("#dname").text(item.name).style("color", colorMap[item.name] || "var(--ink)");
+  d3.select("#drole").text("Profile across " + axes.length + " axes");
+  const wrap = d3.select("#axisList"); wrap.html("");
+  axes.forEach((a, i) => {
+    const v = item.values[i];
+    const row = wrap.append("div").attr("class","axis-row");
+    row.append("div").attr("class","ak").text(a);
+    row.append("div").attr("class","av").text(v.toFixed(1));
+    row.append("div").attr("class","bar").style("width", (v/MAX_VAL*100) + "%");
+  });
+  const sum = d3.sum(item.values);
+  const mx = d3.max(item.values);
+  const mn = d3.min(item.values);
+  d3.select("#dsum").text(sum.toFixed(0));
+  d3.select("#dmax").text(mx.toFixed(0));
+  d3.select("#dmin").text(mn.toFixed(0));
+  d3.select("#dspread").text((mx-mn).toFixed(0));
+}
+
+// Entry animation
+shapes.style("opacity",0).transition().delay((d,i)=>50+i*120).duration(700).style("opacity",1);
+allDots.forEach((dt, i) => {
+  dt.attr("r", 0).transition().delay(400 + i*8).duration(400).attr("r", 4);
+});
+showItemDetail(null);
+</script>
+</body>
+</html>

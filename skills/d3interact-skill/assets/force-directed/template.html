@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Network · {{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background: radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%), radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); mix-blend-mode:overlay;}
+  .frame{position:relative; z-index:1; max-width:1500px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  .stage{display:grid; grid-template-columns: 220px 1fr 280px; gap:28px; align-items:start;}
+  .panel{background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line); padding:20px 18px;}
+  .panel h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;}
+  .panel h3 .idx{color:var(--accent);}
+  .legend-item{display:flex; align-items:center; gap:10px; padding:7px 0; cursor:pointer; border-bottom:1px dashed var(--line); transition:all .25s ease;}
+  .legend-item:last-child{border-bottom:none;}
+  .legend-item .sw{width:14px; height:14px; flex-shrink:0; border-radius:50%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);}
+  .legend-item .lbl{font-size:13px; color:var(--ink); flex:1;}
+  .legend-item .val{font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute);}
+  .legend-item:hover{transform:translateX(3px);}
+  .legend-item:hover .lbl{color:var(--accent);}
+  .controls{margin-top:24px;}
+  .ctrl{display:flex; justify-content:space-between; align-items:center; padding:10px 0; font-size:12px; color:var(--ink-dim); border-bottom:1px dashed var(--line);}
+  .ctrl:last-child{border-bottom:none;}
+  .ctrl span{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase;}
+  .ctrl kbd{font-family:'JetBrains Mono', monospace; font-size:10px; background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink);}
+
+  .chart-wrap{background:var(--bg-1); border:1px solid var(--line); position:relative; aspect-ratio: 4 / 3;}
+  .chart-wrap svg{width:100%; height:100%; display:block; cursor:grab;}
+  .chart-wrap svg:active{cursor:grabbing;}
+
+  .node{cursor:pointer;}
+  .node circle{transition: r .25s, stroke-width .25s, filter .25s;}
+  .node:hover circle{filter: brightness(1.2) saturate(1.1);}
+  .node.dim{opacity:.18;}
+  .node.glow circle{filter: drop-shadow(0 0 12px rgba(240,198,116,.6)) brightness(1.15);}
+  .node text{font-family:'Inter Tight', sans-serif; font-size:11px; fill:var(--ink); pointer-events:none; text-anchor:middle;}
+
+  .link{stroke:var(--ink-dim); stroke-opacity:.18; transition:stroke-opacity .25s, stroke .25s;}
+  .link.dim{stroke-opacity:.04;}
+  .link.glow{stroke:var(--accent); stroke-opacity:.7;}
+
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:24px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .role{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .stat-row{display:flex; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:22px;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+  .nbr-list{margin-top:22px;}
+  .nbr-list h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .nbr-row{display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12px; cursor:pointer; transition: padding .2s; position:relative;}
+  .nbr-row:hover{padding-left:4px;}
+  .nbr-row .dot{width:8px; height:8px; flex-shrink:0; border-radius:50%;}
+  .nbr-row .nm{flex:1;}
+  .nbr-row .vl{font-family:'JetBrains Mono', monospace; color:var(--ink-mute); font-size:10.5px;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:170px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .tgroup{font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+  @media (max-width: 1100px){.stage{grid-template-columns:1fr;} .frame{padding:32px 24px;} header.title{grid-template-columns:1fr;} .meta{text-align:left;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> {{EYEBROW}}</div>
+      <h1>{{H1_LEFT}} <em>{{H1_EM}}</em><br>{{H1_RIGHT}}</h1>
+      <p class="lede">{{LEDE}}</p>
+    </div>
+    <div class="meta">
+      <b>{{META_TITLE}}</b> &nbsp; / &nbsp; {{META_SUB}}<br>
+      Dataset · {{META_DATA}}<br>
+      Idiom · <b>Force-Directed</b> &nbsp; / &nbsp; Marks · nodes + edges
+    </div>
+  </header>
+
+  <div class="stage">
+    <aside class="panel">
+      <h3><span>{{LEGEND_TITLE}}</span><span class="idx">G</span></h3>
+      <div id="legend"></div>
+      <div class="controls">
+        <h3><span>Interactions</span><span class="idx">05</span></h3>
+        <div class="ctrl"><span>Inspect</span><kbd>Hover</kbd></div>
+        <div class="ctrl"><span>Pin / Move</span><kbd>Drag</kbd></div>
+        <div class="ctrl"><span>Zoom</span><kbd>Wheel</kbd></div>
+        <div class="ctrl"><span>Pan</span><kbd>Drag bg</kbd></div>
+        <div class="ctrl"><span>Filter</span><kbd>Legend</kbd></div>
+      </div>
+    </aside>
+    <div class="chart-wrap">
+      <svg id="chart"></svg>
+    </div>
+    <aside class="panel-detail">
+      <h3>Selection</h3>
+      <div class="name" id="dname">— hover a node —</div>
+      <div class="role" id="drole">{{DEFAULT_HINT}}</div>
+      <div class="stat-row"><span class="k">Group</span><span class="v" id="dgroup">—</span></div>
+      <div class="stat-row"><span class="k">Connections</span><span class="v" id="ddegree">—<small>edges</small></span></div>
+      <div class="stat-row"><span class="k">Weight</span><span class="v" id="dweight">—<small>{{UNIT}}</small></span></div>
+      <div class="nbr-list" id="nbrList"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="tgroup"></div>
+  <div class="trow"><span class="tk">Degree</span><span class="tv tv-deg"></span></div>
+  <div class="trow"><span class="tk">Weight</span><span class="tv tv-w"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+const UNIT = "{{UNIT}}";
+const groupColors = {{COLORS}};   // { groupName: hex }
+const rawData = {{DATA}};          // { nodes: [{id, group, value?}], links: [{source, target, value?}] }
+
+const W = 900, H = 670;
+const svg = d3.select("#chart").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+
+// Zoom + pan layer
+const zoomG = svg.append("g");
+svg.call(d3.zoom().scaleExtent([0.4, 4]).on("zoom", e => zoomG.attr("transform", e.transform)));
+
+// Precompute node degree
+const degMap = new Map();
+rawData.nodes.forEach(n => degMap.set(n.id, 0));
+rawData.links.forEach(l => {
+  degMap.set(l.source, (degMap.get(l.source) || 0) + 1);
+  degMap.set(l.target, (degMap.get(l.target) || 0) + 1);
+});
+rawData.nodes.forEach(n => { n.degree = degMap.get(n.id) || 0; });
+
+const sim = d3.forceSimulation(rawData.nodes)
+  .force("link", d3.forceLink(rawData.links).id(d => d.id).distance(70).strength(0.4))
+  .force("charge", d3.forceManyBody().strength(-220))
+  .force("center", d3.forceCenter(W/2, H/2))
+  .force("collide", d3.forceCollide().radius(d => nodeRadius(d) + 3));
+
+const link = zoomG.append("g").selectAll("line").data(rawData.links).join("line")
+  .attr("class","link")
+  .attr("stroke-width", d => Math.max(0.6, Math.sqrt(d.value || 1)));
+
+const node = zoomG.append("g").selectAll("g.node").data(rawData.nodes).join("g")
+  .attr("class","node")
+  .call(d3.drag().on("start", dragStart).on("drag", dragged).on("end", dragEnd));
+
+node.append("circle")
+  .attr("r", d => nodeRadius(d))
+  .attr("fill", d => groupColors[d.group] || "#7fb8a4")
+  .attr("stroke", "rgba(255,255,255,0.25)")
+  .attr("stroke-width", 1.5);
+
+node.append("text")
+  .attr("dy", d => -nodeRadius(d) - 6)
+  .text(d => d.id);
+
+node.on("mouseenter", nodeEnter).on("mousemove", tipMove).on("mouseleave", clearHl);
+
+function nodeRadius(d){ return 6 + Math.sqrt(d.degree || 1) * 2.5;}
+
+sim.on("tick", () => {
+  link.attr("x1", d=>d.source.x).attr("y1", d=>d.source.y).attr("x2", d=>d.target.x).attr("y2", d=>d.target.y);
+  node.attr("transform", d => `translate(${d.x},${d.y})`);
+});
+
+function dragStart(event, d){ if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y;}
+function dragged(event, d){ d.fx = event.x; d.fy = event.y;}
+function dragEnd(event, d){ if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null;}
+
+// Legend
+const groups = [...new Set(rawData.nodes.map(n => n.group))];
+const legendEl = d3.select("#legend");
+groups.forEach(g => {
+  const count = rawData.nodes.filter(n => n.group === g).length;
+  const row = legendEl.append("div").attr("class","legend-item").datum(g)
+    .on("mouseenter", () => {
+      node.classed("dim", n => n.group !== g);
+      link.classed("dim", l => l.source.group !== g && l.target.group !== g);
+    })
+    .on("mouseleave", () => clearHl());
+  row.append("div").attr("class","sw").style("background", groupColors[g] || "#7fb8a4");
+  row.append("div").attr("class","lbl").text(g);
+  row.append("div").attr("class","val").text(count);
+});
+
+// Hover
+const tip = d3.select("#tip");
+function tipMove(e){ tip.style("left",(e.clientX+18)+"px").style("top",(e.clientY+18)+"px");}
+function nodeEnter(event, d){
+  const neighbors = new Set([d]);
+  rawData.links.forEach(l => {
+    if (l.source === d) neighbors.add(l.target);
+    if (l.target === d) neighbors.add(l.source);
+  });
+  node.classed("dim", n => !neighbors.has(n));
+  node.filter(n => n === d).classed("glow", true).classed("dim", false);
+  link.classed("dim", l => l.source !== d && l.target !== d);
+  link.filter(l => l.source === d || l.target === d).classed("glow", true);
+
+  tip.select(".tname").text(d.id);
+  tip.select(".tgroup").text(d.group);
+  tip.select(".tv-deg").text(d.degree);
+  tip.select(".tv-w").text((d.value || 0).toFixed(2));
+  tip.select(".tbar").style("background", groupColors[d.group] || "#7fb8a4");
+  tip.classed("on", true);
+
+  showDetail(d);
+}
+function clearHl(){
+  node.classed("dim", false).classed("glow", false);
+  link.classed("dim", false).classed("glow", false);
+  tip.classed("on", false);
+}
+
+function showDetail(d){
+  d3.select("#dname").text(d.id);
+  d3.select("#drole").text("Node · " + d.group);
+  d3.select("#dgroup").text(d.group);
+  d3.select("#ddegree").html(d.degree + "<small>edges</small>");
+  d3.select("#dweight").html((d.value || 0).toFixed(2) + "<small>" + UNIT + "</small>");
+  const wrap = d3.select("#nbrList"); wrap.html("");
+  const neighbors = [];
+  rawData.links.forEach(l => {
+    if (l.source === d) neighbors.push({n: l.target, w: l.value || 1});
+    else if (l.target === d) neighbors.push({n: l.source, w: l.value || 1});
+  });
+  neighbors.sort((a,b) => b.w - a.w);
+  if (neighbors.length){
+    wrap.append("h4").text("Connections · " + neighbors.length);
+    neighbors.slice(0,10).forEach(({n, w}) => {
+      const row = wrap.append("div").attr("class","nbr-row")
+        .on("mouseenter", () => {
+          node.classed("dim", x => x !== d && x !== n);
+          link.classed("dim", l => !((l.source===d && l.target===n) || (l.source===n && l.target===d)));
+        })
+        .on("mouseleave", () => clearHl());
+      row.append("div").attr("class","dot").style("background", groupColors[n.group] || "#7fb8a4");
+      row.append("div").attr("class","nm").text(n.id);
+      row.append("div").attr("class","vl").text(w.toFixed(2));
+    });
+  }
+}
+
+node.style("opacity",0).transition().delay((d,i)=>20+i*15).duration(600).style("opacity",1);
+link.attr("stroke-opacity",0).transition().delay(300).duration(700).attr("stroke-opacity",0.18);
+</script>
+</body>
+</html>

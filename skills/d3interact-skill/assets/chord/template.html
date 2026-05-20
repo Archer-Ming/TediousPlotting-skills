@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chord · {{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background: radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%), radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); mix-blend-mode:overlay;}
+  .frame{position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  .stage{display:grid; grid-template-columns: 220px 1fr 280px; gap:28px; align-items:start;}
+  .panel{background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line); padding:20px 18px;}
+  .panel h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:14px; display:flex; justify-content:space-between;}
+  .panel h3 .idx{color:var(--accent);}
+  .legend-item{display:flex; align-items:center; gap:10px; padding:7px 0; cursor:pointer; border-bottom:1px dashed var(--line); transition:all .25s;}
+  .legend-item:last-child{border-bottom:none;}
+  .legend-item .sw{width:14px; height:14px; flex-shrink:0; border-radius:2px;}
+  .legend-item .lbl{font-size:13px; flex:1;}
+  .legend-item .val{font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute);}
+  .legend-item:hover{transform:translateX(3px);}
+  .legend-item:hover .lbl{color:var(--accent);}
+  .controls{margin-top:24px;}
+  .ctrl{display:flex; justify-content:space-between; padding:10px 0; font-size:12px; color:var(--ink-dim); border-bottom:1px dashed var(--line);}
+  .ctrl:last-child{border-bottom:none;}
+  .ctrl span{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase;}
+  .ctrl kbd{font-family:'JetBrains Mono', monospace; font-size:10px; background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink);}
+
+  .chart-wrap{aspect-ratio: 1 / 1; display:flex; justify-content:center; align-items:center;}
+  .chart-wrap svg{width:100%; height:100%; display:block; overflow:visible;}
+
+  .group-arc{cursor:pointer; transition: filter .25s;}
+  .group-arc:hover{filter: brightness(1.18) saturate(1.1);}
+  .group-arc.dim{opacity:.18;}
+  .group-arc.glow{filter: drop-shadow(0 0 12px rgba(240,198,116,.5)) brightness(1.15);}
+
+  .group-label{font-family:'Inter Tight', sans-serif; font-size:11px; fill:var(--ink); pointer-events:none;}
+  .group-tick{font-family:'JetBrains Mono', monospace; font-size:8px; fill:var(--ink-mute); pointer-events:none;}
+  .group-tick-line{stroke:var(--ink-mute); stroke-width:0.5;}
+
+  .ribbon{cursor:pointer; transition: opacity .25s, fill-opacity .25s;}
+  .ribbon.dim{opacity:.05;}
+  .ribbon.glow{fill-opacity:.85;}
+
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:24px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .role{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .stat-row{display:flex; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:22px;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+  .pair-list{margin-top:22px;}
+  .pair-list h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .pair-row{display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12px; cursor:pointer; position:relative;}
+  .pair-row .arrow{color:var(--accent); font-family:'JetBrains Mono', monospace;}
+  .pair-row .nm{flex:1;}
+  .pair-row .vl{font-family:'JetBrains Mono', monospace; color:var(--ink-mute); font-size:10.5px;}
+  .pair-row .br{position:absolute; left:0; bottom:0; height:1px; background:var(--accent); opacity:.4;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:170px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+  @media (max-width: 1100px){.stage{grid-template-columns:1fr;} .frame{padding:32px 24px;} header.title{grid-template-columns:1fr;} .meta{text-align:left;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> {{EYEBROW}}</div>
+      <h1>{{H1_LEFT}} <em>{{H1_EM}}</em><br>{{H1_RIGHT}}</h1>
+      <p class="lede">{{LEDE}}</p>
+    </div>
+    <div class="meta">
+      <b>{{META_TITLE}}</b> &nbsp; / &nbsp; {{META_SUB}}<br>
+      Dataset · {{META_DATA}}<br>
+      Idiom · <b>Chord</b> &nbsp; / &nbsp; Marks · arcs + ribbons
+    </div>
+  </header>
+
+  <div class="stage">
+    <aside class="panel">
+      <h3><span>{{LEGEND_TITLE}}</span><span class="idx">L1</span></h3>
+      <div id="legend"></div>
+      <div class="controls">
+        <h3><span>Interactions</span><span class="idx">03</span></h3>
+        <div class="ctrl"><span>Inspect</span><kbd>Hover arc</kbd></div>
+        <div class="ctrl"><span>Flow</span><kbd>Hover ribbon</kbd></div>
+        <div class="ctrl"><span>Filter</span><kbd>Legend</kbd></div>
+      </div>
+    </aside>
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="-360 -360 720 720" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <aside class="panel-detail">
+      <h3>Selection</h3>
+      <div class="name" id="dname">{{ROOT_NAME}}</div>
+      <div class="role" id="drole">{{DEFAULT_HINT}}</div>
+      <div class="stat-row"><span class="k">Total</span><span class="v" id="dval">—<small>{{UNIT}}</small></span></div>
+      <div class="stat-row"><span class="k">Outgoing</span><span class="v" id="dout">—<small>{{UNIT}}</small></span></div>
+      <div class="stat-row"><span class="k">Incoming</span><span class="v" id="din">—<small>{{UNIT}}</small></span></div>
+      <div class="pair-list" id="pairList"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="trow"><span class="tk">Value</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Share</span><span class="tv tv-share"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+const UNIT = "{{UNIT}}";
+const names = {{NAMES}};        // ["A","B","C",...]
+const matrix = {{DATA}};        // n×n square matrix
+const colorMap = {{COLORS}};    // { name: hex }
+
+const outerRadius = 290;
+const innerRadius = outerRadius - 20;
+const svg = d3.select("#chart");
+
+const chord = d3.chord().padAngle(0.04).sortSubgroups(d3.descending)(matrix);
+
+const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+const ribbon = d3.ribbon().radius(innerRadius - 2);
+
+// Group arcs
+const group = svg.append("g").selectAll("g.group").data(chord.groups).join("g").attr("class","group");
+
+group.append("path").attr("class","group-arc")
+  .attr("fill", d => colorMap[names[d.index]] || "#7fb8a4")
+  .attr("stroke", "rgba(255,255,255,0.18)")
+  .attr("stroke-width", 0.8)
+  .attr("d", arc)
+  .on("mouseenter", (e,d) => groupEnter(e,d))
+  .on("mousemove", tipMove)
+  .on("mouseleave", clearHl);
+
+// Labels around arcs
+group.append("text").attr("class","group-label")
+  .attr("dy", "0.35em")
+  .attr("transform", d => {
+    const angle = (d.startAngle + d.endAngle) / 2;
+    const rot = angle * 180 / Math.PI - 90;
+    const flip = angle > Math.PI;
+    return `rotate(${rot}) translate(${outerRadius + 14}) ${flip ? "rotate(180)" : ""}`;
+  })
+  .attr("text-anchor", d => (d.startAngle + d.endAngle) / 2 > Math.PI ? "end" : "start")
+  .text(d => names[d.index]);
+
+// Ticks
+group.each(function(d){
+  const ticks = d3.range(0, d.value, Math.max(1, Math.floor(d.value/4))).slice(0,4);
+  const k = (d.endAngle - d.startAngle) / d.value;
+  const sel = d3.select(this).selectAll("g.tick").data(ticks.map(v => ({value:v, angle: v*k + d.startAngle}))).join("g").attr("class","tick")
+    .attr("transform", t => `rotate(${t.angle*180/Math.PI - 90}) translate(${outerRadius + 2})`);
+  sel.append("line").attr("class","group-tick-line").attr("x2", 4);
+  sel.append("text").attr("class","group-tick").attr("x", 7).attr("dy","0.3em")
+    .attr("transform", t => t.angle > Math.PI ? "rotate(180) translate(-14)" : null)
+    .attr("text-anchor", t => t.angle > Math.PI ? "end" : "start")
+    .text(t => t.value);
+});
+
+// Ribbons
+const rib = svg.append("g").attr("fill-opacity", 0.55).selectAll("path.ribbon")
+  .data(chord).join("path").attr("class","ribbon")
+  .attr("d", ribbon)
+  .attr("fill", d => colorMap[names[d.source.index]] || "#7fb8a4")
+  .attr("stroke","rgba(0,0,0,0.25)").attr("stroke-width", 0.4)
+  .on("mouseenter", (e,d) => ribbonEnter(e,d))
+  .on("mousemove", tipMove)
+  .on("mouseleave", clearHl);
+
+// Entry animation
+group.style("opacity",0).transition().delay((d,i)=>30+i*40).duration(600).style("opacity",1);
+rib.style("opacity",0).transition().delay((d,i)=>400+i*8).duration(700).style("opacity",1);
+
+// Legend
+const total = d3.sum(matrix.flat());
+const legendEl = d3.select("#legend");
+names.forEach((nm, i) => {
+  const rowSum = d3.sum(matrix[i]) + d3.sum(matrix.map(r => r[i])) - matrix[i][i];
+  const row = legendEl.append("div").attr("class","legend-item").datum(i)
+    .on("mouseenter", () => highlightGroup(i))
+    .on("mouseleave", () => clearHl());
+  row.append("div").attr("class","sw").style("background", colorMap[nm] || "#7fb8a4");
+  row.append("div").attr("class","lbl").text(nm);
+  row.append("div").attr("class","val").text(rowSum.toFixed(1));
+});
+
+const tip = d3.select("#tip");
+function tipMove(e){ tip.style("left",(e.clientX+18)+"px").style("top",(e.clientY+18)+"px");}
+
+function groupEnter(event, d){
+  highlightGroup(d.index);
+  const outflow = d3.sum(matrix[d.index]);
+  const inflow = d3.sum(matrix.map(r => r[d.index])) - matrix[d.index][d.index];
+  tip.select(".tname").text(names[d.index]);
+  tip.select(".tv-val").html((outflow + inflow).toFixed(2) + " <span style='color:var(--ink-mute)'>" + UNIT + "</span>");
+  tip.select(".tv-share").text(((outflow + inflow) / (total*2) * 100).toFixed(1) + "%");
+  tip.select(".tbar").style("background", colorMap[names[d.index]] || "#7fb8a4");
+  tip.classed("on", true);
+  showGroupDetail(d.index);
+}
+
+function ribbonEnter(event, d){
+  group.selectAll(".group-arc").classed("dim", (_,i) => i !== d.source.index && i !== d.target.index);
+  rib.classed("dim", r => r !== d);
+  d3.select(event.currentTarget).classed("glow", true);
+  d3.selectAll(".legend-item").style("opacity", (_,i) => (i === d.source.index || i === d.target.index) ? 1 : 0.3);
+  tip.select(".tname").text(names[d.source.index] + " ↔ " + names[d.target.index]);
+  const v = d.source.value;
+  const back = d.target.value;
+  tip.select(".tv-val").html(v.toFixed(2) + " <span style='color:var(--ink-mute)'>(reverse: " + back.toFixed(2) + ")</span>");
+  tip.select(".tv-share").text(((v + back)/(total*2)*100).toFixed(1) + "%");
+  tip.select(".tbar").style("background", colorMap[names[d.source.index]] || "#7fb8a4");
+  tip.classed("on", true);
+  showPairDetail(d);
+}
+
+function highlightGroup(idx){
+  group.selectAll(".group-arc").classed("dim", (_,i) => i !== idx);
+  rib.classed("dim", r => r.source.index !== idx && r.target.index !== idx);
+  rib.filter(r => r.source.index === idx || r.target.index === idx).classed("glow", true);
+  d3.selectAll(".legend-item").style("opacity", (_,i) => i === idx ? 1 : 0.3);
+}
+
+function clearHl(){
+  group.selectAll(".group-arc").classed("dim", false);
+  rib.classed("dim", false).classed("glow", false);
+  d3.selectAll(".legend-item").style("opacity", 1);
+  tip.classed("on", false);
+}
+
+function showGroupDetail(idx){
+  const nm = names[idx];
+  const outflow = d3.sum(matrix[idx]);
+  const inflow = d3.sum(matrix.map(r => r[idx])) - matrix[idx][idx];
+  d3.select("#dname").text(nm);
+  d3.select("#drole").text("Entity · row " + (idx+1));
+  d3.select("#dval").html((outflow + inflow).toFixed(2) + "<small>" + UNIT + "</small>");
+  d3.select("#dout").html(outflow.toFixed(2) + "<small>" + UNIT + "</small>");
+  d3.select("#din").html(inflow.toFixed(2) + "<small>" + UNIT + "</small>");
+  const wrap = d3.select("#pairList"); wrap.html("");
+  const pairs = [];
+  names.forEach((n2, j) => {
+    if (j === idx) return;
+    const out = matrix[idx][j], inn = matrix[j][idx];
+    pairs.push({to:n2, out, inn, total: out + inn});
+  });
+  pairs.sort((a,b) => b.total - a.total);
+  if (pairs.length){
+    wrap.append("h4").text("Top partners");
+    const max = pairs[0].total;
+    pairs.slice(0,6).forEach(p => {
+      const row = wrap.append("div").attr("class","pair-row");
+      row.append("span").attr("class","arrow").text("↔");
+      row.append("div").attr("class","nm").text(p.to);
+      row.append("div").attr("class","vl").text(p.total.toFixed(1));
+      row.append("div").attr("class","br").style("width", (p.total/max*100) + "%");
+    });
+  }
+}
+
+function showPairDetail(d){
+  d3.select("#dname").text(names[d.source.index] + " ↔ " + names[d.target.index]);
+  d3.select("#drole").text("Bidirectional flow");
+  d3.select("#dval").html((d.source.value + d.target.value).toFixed(2) + "<small>" + UNIT + "</small>");
+  d3.select("#dout").html(d.source.value.toFixed(2) + "<small>→</small>");
+  d3.select("#din").html(d.target.value.toFixed(2) + "<small>←</small>");
+  d3.select("#pairList").html("");
+}
+
+showGroupDetail(0);
+</script>
+</body>
+</html>

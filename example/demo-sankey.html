@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sankey · 能源流向桑基图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background: radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%), radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); mix-blend-mode:overlay;}
+  .frame{position:relative; z-index:1; max-width:1500px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  .stage{display:grid; grid-template-columns: 1fr 280px; gap:28px;}
+  .chart-wrap{background:var(--bg-1); border:1px solid var(--line); padding:24px;}
+  .stage-labels{display:flex; justify-content:space-around; padding:0 8px 14px; font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-mute); border-bottom:1px dashed var(--line); margin-bottom:14px;}
+
+  svg{display:block; width:100%; height:auto;}
+  .node-rect{cursor:pointer; transition: filter .25s;}
+  .node-rect:hover{filter: brightness(1.18) saturate(1.1);}
+  .node-rect.dim{opacity:.22;}
+  .node-rect.glow{filter: drop-shadow(0 0 12px rgba(240,198,116,.5)) brightness(1.15);}
+  .node-label{font-family:'Inter Tight', sans-serif; font-size:12px; font-weight:500; fill:var(--ink); pointer-events:none;}
+  .node-val{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--ink-mute); pointer-events:none;}
+  .link{fill:none; transition: stroke-opacity .25s, stroke .25s; cursor:pointer;}
+  .link.dim{stroke-opacity:.05;}
+  .link.glow{stroke-opacity:.55;}
+
+  .panel-detail{padding:22px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:24px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .role{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .stat-row{display:flex; justify-content:space-between; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:22px;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+  .flow-list{margin-top:22px;}
+  .flow-list h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .flow-row{display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12px; position:relative;}
+  .flow-row .arrow{color:var(--accent); font-family:'JetBrains Mono', monospace;}
+  .flow-row .nm{flex:1; color:var(--ink); font-size:11.5px;}
+  .flow-row .vl{font-family:'JetBrains Mono', monospace; color:var(--ink-mute); font-size:10.5px;}
+  .flow-row .br{position:absolute; left:0; bottom:0; height:1px; background:var(--accent); opacity:.4;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:180px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:15px; margin-bottom:4px;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+  @media (max-width: 1100px){.stage{grid-template-columns:1fr;} .frame{padding:32px 24px;} header.title{grid-template-columns:1fr;} .meta{text-align:left;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> 可视化习语 · 桑基图 · 2024</div>
+      <h1>能源的 <em>流向</em><br>从源头到终端。</h1>
+      <p class="lede">每条缎带追溯一份能源从源头、经过转换，到最终用途的路径。悬停任意节点可查看其进出量。</p>
+    </div>
+    <div class="meta">
+      <b>Skill 演示</b> &nbsp; / &nbsp; Sankey · D3<br>
+      Dataset · 2024 (示意数据)<br>
+      Idiom · <b>Sankey</b> &nbsp; / &nbsp; Marks · ribbons + nodes
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="chart-wrap">
+      <div class="stage-labels" id="stageLabels"></div>
+      <svg id="chart"></svg>
+    </div>
+    <aside class="panel-detail">
+      <h3>Selection</h3>
+      <div class="name" id="dname">— hover a node —</div>
+      <div class="role" id="drole">点击或悬停节点查看详情</div>
+      <div class="stat-row"><span class="k">Total flow</span><span class="v" id="dval">—<small>EJ</small></span></div>
+      <div class="stat-row"><span class="k">Inflow</span><span class="v" id="din">—<small>EJ</small></span></div>
+      <div class="stat-row"><span class="k">Outflow</span><span class="v" id="dout">—<small>EJ</small></span></div>
+      <div class="flow-list" id="flowList"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="trow"><span class="tk">Flow</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Share of source</span><span class="tv tv-srcs"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+const UNIT = "EJ";
+const STAGE_LABELS = ["能源源头", "转换", "载体", "终端部门"];  // ["Sources", "Stage 1", ..., "Sinks"]
+const colorMap = {"Coal": "#5b6068", "Oil": "#c98a5b", "Natural Gas": "#b88ec2", "Renewables": "#7fb8a4", "Nuclear": "#6a9bd1", "Power Generation": "#e36a4a", "Heat": "#d6b85a", "Transport Fuel": "#f0c674"};   // name → hex
+const rawData = {"nodes": [{"name": "Coal"}, {"name": "Oil"}, {"name": "Natural Gas"}, {"name": "Renewables"}, {"name": "Nuclear"}, {"name": "Power Generation"}, {"name": "Heat"}, {"name": "Transport Fuel"}, {"name": "Industry"}, {"name": "Residential"}, {"name": "Commercial"}, {"name": "Transport"}], "links": [{"source": "Coal", "target": "Power Generation", "value": 32}, {"source": "Coal", "target": "Industry", "value": 12}, {"source": "Oil", "target": "Transport Fuel", "value": 38}, {"source": "Oil", "target": "Industry", "value": 8}, {"source": "Natural Gas", "target": "Power Generation", "value": 22}, {"source": "Natural Gas", "target": "Heat", "value": 14}, {"source": "Natural Gas", "target": "Industry", "value": 6}, {"source": "Renewables", "target": "Power Generation", "value": 18}, {"source": "Nuclear", "target": "Power Generation", "value": 10}, {"source": "Power Generation", "target": "Residential", "value": 28}, {"source": "Power Generation", "target": "Commercial", "value": 22}, {"source": "Power Generation", "target": "Industry", "value": 32}, {"source": "Heat", "target": "Residential", "value": 9}, {"source": "Heat", "target": "Commercial", "value": 5}, {"source": "Transport Fuel", "target": "Transport", "value": 38}]};       // { nodes: [{name}], links: [{source,target,value}] }
+
+const W = 1100, H = 620;
+const svg = d3.select("#chart").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+
+const sankey = d3.sankey()
+  .nodeId(d => d.name)
+  .nodeWidth(14)
+  .nodePadding(14)
+  .nodeAlign(d3.sankeyJustify)
+  .extent([[8, 8], [W - 8, H - 8]]);
+
+const graph = sankey({
+  nodes: rawData.nodes.map(d => Object.assign({}, d)),
+  links: rawData.links.map(d => Object.assign({}, d))
+});
+
+function nodeColor(n){
+  if (colorMap[n.name]) return colorMap[n.name];
+  // Try to use the nearest upstream colored node
+  if (n.targetLinks && n.targetLinks.length){
+    const src = n.targetLinks[0].source;
+    if (colorMap[src.name]) {
+      const c = d3.hsl(colorMap[src.name]); c.l = Math.min(.78, c.l + .05); return c.formatHex();
+    }
+  }
+  return "#7fb8a4";
+}
+
+// Stage labels along x
+const stageX = [...new Set(graph.nodes.map(n => n.depth))].sort((a,b)=>a-b);
+const labelsBar = d3.select("#stageLabels");
+STAGE_LABELS.forEach(t => labelsBar.append("span").text(t));
+
+// Links
+const linkSel = svg.append("g").attr("fill","none").selectAll("path")
+  .data(graph.links).join("path")
+  .attr("class","link")
+  .attr("d", d3.sankeyLinkHorizontal())
+  .attr("stroke", d => {
+    const id = "g_" + d.source.name.replace(/\W/g,'_') + "_" + d.target.name.replace(/\W/g,'_');
+    return `url(#${id})`;
+  })
+  .attr("stroke-width", d => Math.max(1, d.width))
+  .attr("stroke-opacity", 0.22)
+  .on("mouseenter", linkEnter).on("mousemove", tipMove).on("mouseleave", clearHl);
+
+// gradients for links
+const defs = svg.append("defs");
+graph.links.forEach(d => {
+  const id = "g_" + d.source.name.replace(/\W/g,'_') + "_" + d.target.name.replace(/\W/g,'_');
+  const g = defs.append("linearGradient").attr("id", id).attr("gradientUnits","userSpaceOnUse")
+    .attr("x1", d.source.x1).attr("x2", d.target.x0);
+  g.append("stop").attr("offset","0%").attr("stop-color", nodeColor(d.source));
+  g.append("stop").attr("offset","100%").attr("stop-color", nodeColor(d.target));
+});
+
+// Nodes
+const nodeG = svg.append("g").selectAll("g.node-grp").data(graph.nodes).join("g").attr("class","node-grp");
+
+nodeG.append("rect").attr("class","node-rect")
+  .attr("x", d => d.x0).attr("y", d => d.y0)
+  .attr("width", d => d.x1 - d.x0).attr("height", d => Math.max(2, d.y1 - d.y0))
+  .attr("fill", d => nodeColor(d))
+  .attr("stroke", "rgba(255,255,255,0.18)").attr("stroke-width", 0.6)
+  .on("mouseenter", nodeEnter).on("mousemove", tipMove).on("mouseleave", clearHl)
+  .on("click", (e,d) => focusNode(d));
+
+nodeG.append("text").attr("class","node-label")
+  .attr("x", d => d.x0 < W/2 ? d.x1 + 8 : d.x0 - 8)
+  .attr("y", d => (d.y0 + d.y1)/2)
+  .attr("dy","0.35em")
+  .attr("text-anchor", d => d.x0 < W/2 ? "start" : "end")
+  .text(d => d.name);
+
+nodeG.append("text").attr("class","node-val")
+  .attr("x", d => d.x0 < W/2 ? d.x1 + 8 : d.x0 - 8)
+  .attr("y", d => (d.y0 + d.y1)/2 + 14)
+  .attr("text-anchor", d => d.x0 < W/2 ? "start" : "end")
+  .text(d => d.value.toFixed(1) + " " + UNIT);
+
+// Entry animation
+linkSel.attr("stroke-opacity", 0).transition().delay((d,i) => 30 + i*8).duration(700).attr("stroke-opacity", 0.22);
+nodeG.style("opacity", 0).transition().delay((d,i) => 20 + i*15).duration(500).style("opacity", 1);
+
+const tip = d3.select("#tip");
+function tipMove(e){ tip.style("left",(e.clientX+18)+"px").style("top",(e.clientY+18)+"px");}
+
+function linkEnter(event, d){
+  linkSel.classed("dim", l => l !== d);
+  d3.select(this).classed("glow", true);
+  nodeG.selectAll(".node-rect").classed("dim", n => n !== d.source && n !== d.target);
+  tip.select(".tname").text(d.source.name + " → " + d.target.name);
+  tip.select(".tv-val").html(d.value.toFixed(2) + " <span style='color:var(--ink-mute)'>" + UNIT + "</span>");
+  const sShare = d.value / d.source.value * 100;
+  tip.select(".tv-srcs").text(sShare.toFixed(1) + "%");
+  tip.select(".tbar").style("background", nodeColor(d.source));
+  tip.classed("on", true);
+  showFlowDetail(d);
+}
+
+function nodeEnter(event, d){
+  const related = new Set();
+  related.add(d);
+  d.sourceLinks.forEach(l => related.add(l.target));
+  d.targetLinks.forEach(l => related.add(l.source));
+  nodeG.selectAll(".node-rect").classed("dim", n => !related.has(n));
+  linkSel.classed("dim", l => l.source !== d && l.target !== d);
+  linkSel.filter(l => l.source === d || l.target === d).classed("glow", true);
+  showNodeDetail(d);
+  tip.select(".tname").text(d.name);
+  const inflow = d3.sum(d.targetLinks, l => l.value);
+  const outflow = d3.sum(d.sourceLinks, l => l.value);
+  tip.select(".tv-val").html(d.value.toFixed(2) + " <span style='color:var(--ink-mute)'>" + UNIT + "</span>");
+  tip.select(".tv-srcs").text((inflow > 0 ? "in " + inflow.toFixed(1) : "src") + " / " + (outflow > 0 ? "out " + outflow.toFixed(1) : "sink"));
+  tip.select(".tbar").style("background", nodeColor(d));
+  tip.classed("on", true);
+}
+
+function clearHl(){
+  linkSel.classed("dim", false).classed("glow", false);
+  nodeG.selectAll(".node-rect").classed("dim", false).classed("glow", false);
+  tip.classed("on", false);
+}
+
+function focusNode(d){
+  // Persistent highlight: mark this node as active focus; click again to release
+  const isActive = d3.select("#dname").attr("data-active") === d.name;
+  if (isActive){
+    d3.select("#dname").attr("data-active", null);
+    showNodeDetail(null);
+    clearHl();
+  } else {
+    d3.select("#dname").attr("data-active", d.name);
+    nodeEnter.call(null, {clientX:0, clientY:0}, d);
+  }
+}
+
+function showNodeDetail(d){
+  if (!d){
+    d3.select("#dname").text("— hover a node —");
+    d3.select("#drole").text("Click or hover to inspect a node");
+    d3.select("#dval").html("—<small>" + UNIT + "</small>");
+    d3.select("#din").html("—<small>" + UNIT + "</small>");
+    d3.select("#dout").html("—<small>" + UNIT + "</small>");
+    d3.select("#flowList").html("");
+    return;
+  }
+  const inflow = d3.sum(d.targetLinks, l => l.value);
+  const outflow = d3.sum(d.sourceLinks, l => l.value);
+  const isSource = d.targetLinks.length === 0;
+  const isSink = d.sourceLinks.length === 0;
+  d3.select("#dname").text(d.name);
+  d3.select("#drole").text(isSource ? "Source node" : isSink ? "Sink node" : "Intermediate node");
+  d3.select("#dval").html(d.value.toFixed(2) + "<small>" + UNIT + "</small>");
+  d3.select("#din").html(inflow.toFixed(2) + "<small>" + UNIT + "</small>");
+  d3.select("#dout").html(outflow.toFixed(2) + "<small>" + UNIT + "</small>");
+  const wrap = d3.select("#flowList"); wrap.html("");
+  const links = [...d.targetLinks.map(l => ({other:l.source, val:l.value, dir:"←"})),
+                 ...d.sourceLinks.map(l => ({other:l.target, val:l.value, dir:"→"}))]
+                 .sort((a,b) => b.val - a.val).slice(0, 8);
+  if (links.length){
+    wrap.append("h4").text("Connections");
+    const max = links[0].val;
+    links.forEach(l => {
+      const row = wrap.append("div").attr("class","flow-row");
+      row.append("span").attr("class","arrow").text(l.dir);
+      row.append("div").attr("class","nm").text(l.other.name);
+      row.append("div").attr("class","vl").text(l.val.toFixed(2));
+      row.append("div").attr("class","br").style("width", (l.val/max*100) + "%");
+    });
+  }
+}
+
+function showFlowDetail(d){
+  d3.select("#dname").text(d.source.name + " → " + d.target.name);
+  d3.select("#drole").text("Flow connection");
+  d3.select("#dval").html(d.value.toFixed(2) + "<small>" + UNIT + "</small>");
+  d3.select("#din").html((d.value/d.source.value*100).toFixed(1) + "<small>% of source</small>");
+  d3.select("#dout").html((d.value/d.target.value*100).toFixed(1) + "<small>% of target</small>");
+  d3.select("#flowList").html("");
+}
+
+showNodeDetail(null);
+</script>
+</body>
+</html>

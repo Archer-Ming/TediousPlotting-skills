@@ -1,0 +1,9 @@
+{
+  "axes": ["Speed", "Power", "Comfort", "Range", "Tech", "Value"],
+  "items": [
+    { "name": "Coupe S",   "values": [92, 88, 50, 60, 72, 45] },
+    { "name": "Wagon X",   "values": [62, 70, 88, 85, 78, 72] },
+    { "name": "SUV Pro",   "values": [55, 78, 82, 80, 68, 58] },
+    { "name": "Compact E", "values": [70, 50, 65, 55, 90, 88] }
+  ]
+}

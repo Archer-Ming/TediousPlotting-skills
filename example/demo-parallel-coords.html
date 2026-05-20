@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parallel Coords · 鸢尾花平行坐标</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background: radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%), radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); mix-blend-mode:overlay;}
+  .frame{position:relative; z-index:1; max-width:1500px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  .stage{display:grid; grid-template-columns: 220px 1fr 280px; gap:28px; align-items:start;}
+  .panel{background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line); padding:20px 18px;}
+  .panel h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:14px; display:flex; justify-content:space-between;}
+  .panel h3 .idx{color:var(--accent);}
+  .legend-item{display:flex; align-items:center; gap:10px; padding:7px 0; cursor:pointer; border-bottom:1px dashed var(--line); transition:all .25s;}
+  .legend-item:last-child{border-bottom:none;}
+  .legend-item .sw{width:14px; height:14px; flex-shrink:0; border-radius:2px;}
+  .legend-item .lbl{font-size:13px; flex:1;}
+  .legend-item .val{font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute);}
+  .legend-item:hover{transform:translateX(3px);}
+  .legend-item:hover .lbl{color:var(--accent);}
+  .filter-status{margin-top:18px; padding:12px; background:var(--bg-2); border:1px solid var(--line); font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.1em; line-height:1.6;}
+  .filter-status b{color:var(--accent); font-family:'JetBrains Mono', monospace; font-weight:500;}
+  .filter-status .clear{display:block; margin-top:8px; padding:6px 0; text-align:center; cursor:pointer; background:transparent; border:1px solid var(--line-2); color:var(--ink-dim); transition: all .2s; letter-spacing:.18em; text-transform:uppercase;}
+  .filter-status .clear:hover{background:var(--bg-0); color:var(--accent); border-color:var(--accent);}
+  .controls{margin-top:20px;}
+  .ctrl{display:flex; justify-content:space-between; padding:10px 0; font-size:12px; color:var(--ink-dim); border-bottom:1px dashed var(--line);}
+  .ctrl:last-child{border-bottom:none;}
+  .ctrl span{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase;}
+  .ctrl kbd{font-family:'JetBrains Mono', monospace; font-size:10px; background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink);}
+
+  .chart-wrap{background:var(--bg-1); border:1px solid var(--line); padding:24px;}
+  .chart-wrap svg{width:100%; height:auto; display:block;}
+
+  .pc-line{fill:none; stroke-width:1.1px; mix-blend-mode:screen; transition: stroke-opacity .25s, stroke-width .25s;}
+  .pc-line.dim{stroke-opacity:0.04;}
+  .pc-line.glow{stroke-width:2.4px; stroke-opacity:0.95; mix-blend-mode:normal;}
+
+  .axis path, .axis line{stroke:var(--line-2);}
+  .axis text{font-family:'JetBrains Mono', monospace; font-size:10px; fill:var(--ink-dim);}
+  .axis-title{font-family:'Inter Tight', sans-serif; font-size:12px; fill:var(--ink); font-weight:500; text-anchor:middle;}
+
+  .brush .selection{fill:var(--accent); fill-opacity:.18; stroke:var(--accent); stroke-width:1.2px;}
+  .brush .handle{fill:var(--accent);}
+
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:24px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .role{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .attr-row{display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line);}
+  .attr-row .ak{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase;}
+  .attr-row .av{font-family:'Fraunces', serif; font-weight:400; font-size:17px;}
+  .summary{margin-top:18px;}
+  .summary h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .summary-row{display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12px; cursor:pointer; transition: padding .2s;}
+  .summary-row:hover{padding-left:4px;}
+  .summary-row .dot{width:8px; height:8px; flex-shrink:0; border-radius:50%;}
+  .summary-row .nm{flex:1;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:170px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .tgroup{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:6px; text-transform:uppercase;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+  @media (max-width: 1100px){.stage{grid-template-columns:1fr;} .frame{padding:32px 24px;} header.title{grid-template-columns:1fr;} .meta{text-align:left;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> 可视化习语 · 平行坐标 · 2024</div>
+      <h1>鸢尾花在 <em>四个测量</em><br>维度上的形态。</h1>
+      <p class="lede">每条折线代表一朵花，串起四个数值轴。在任意轴上拖动可刷选过滤;点击图例可切换某个品种的显隐。</p>
+    </div>
+    <div class="meta">
+      <b>Skill 演示</b> &nbsp; / &nbsp; Parallel Coords · D3<br>
+      Dataset · 鸢尾花数据集 (采样)<br>
+      Idiom · <b>Parallel Coords</b> &nbsp; / &nbsp; Marks · polylines
+    </div>
+  </header>
+
+  <div class="stage">
+    <aside class="panel">
+      <h3><span>品种</span><span class="idx">G</span></h3>
+      <div id="legend"></div>
+      <div class="filter-status" id="filterStatus">
+        Showing <b id="visCount">—</b> of <b id="totalCount">—</b> records<br>
+        <button class="clear" id="clearBtn">Clear all filters</button>
+      </div>
+      <div class="controls">
+        <h3><span>Interactions</span><span class="idx">04</span></h3>
+        <div class="ctrl"><span>Filter</span><kbd>Drag axis</kbd></div>
+        <div class="ctrl"><span>Inspect</span><kbd>Hover line</kbd></div>
+        <div class="ctrl"><span>Toggle group</span><kbd>Click legend</kbd></div>
+        <div class="ctrl"><span>Release filter</span><kbd>Click selection</kbd></div>
+      </div>
+    </aside>
+
+    <div class="chart-wrap">
+      <svg id="chart"></svg>
+    </div>
+
+    <aside class="panel-detail">
+      <h3>Selection</h3>
+      <div class="name" id="dname">— hover a line —</div>
+      <div class="role" id="drole">悬停一条线,或拖动某轴进行筛选</div>
+      <div id="attrList"></div>
+      <div class="summary" id="summaryWrap"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="tgroup"></div>
+  <div class="trow"><span class="tk">Group</span><span class="tv tv-group"></span></div>
+  <div class="trow"><span class="tk">Axes</span><span class="tv tv-axes"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+const UNIT = "cm";
+const data = [{"name": "r1", "species": "setosa", "sepal_length": 5.1, "sepal_width": 3.5, "petal_length": 1.4, "petal_width": 0.2}, {"name": "r2", "species": "setosa", "sepal_length": 4.9, "sepal_width": 3.0, "petal_length": 1.4, "petal_width": 0.2}, {"name": "r3", "species": "setosa", "sepal_length": 4.7, "sepal_width": 3.2, "petal_length": 1.3, "petal_width": 0.2}, {"name": "r4", "species": "setosa", "sepal_length": 4.6, "sepal_width": 3.1, "petal_length": 1.5, "petal_width": 0.2}, {"name": "r5", "species": "setosa", "sepal_length": 5.0, "sepal_width": 3.6, "petal_length": 1.4, "petal_width": 0.2}, {"name": "r6", "species": "setosa", "sepal_length": 5.4, "sepal_width": 3.9, "petal_length": 1.7, "petal_width": 0.4}, {"name": "r7", "species": "setosa", "sepal_length": 4.6, "sepal_width": 3.4, "petal_length": 1.4, "petal_width": 0.3}, {"name": "r8", "species": "setosa", "sepal_length": 5.0, "sepal_width": 3.4, "petal_length": 1.5, "petal_width": 0.2}, {"name": "r9", "species": "setosa", "sepal_length": 4.4, "sepal_width": 2.9, "petal_length": 1.4, "petal_width": 0.2}, {"name": "r10", "species": "setosa", "sepal_length": 4.9, "sepal_width": 3.1, "petal_length": 1.5, "petal_width": 0.1}, {"name": "r51", "species": "versicolor", "sepal_length": 7.0, "sepal_width": 3.2, "petal_length": 4.7, "petal_width": 1.4}, {"name": "r52", "species": "versicolor", "sepal_length": 6.4, "sepal_width": 3.2, "petal_length": 4.5, "petal_width": 1.5}, {"name": "r53", "species": "versicolor", "sepal_length": 6.9, "sepal_width": 3.1, "petal_length": 4.9, "petal_width": 1.5}, {"name": "r54", "species": "versicolor", "sepal_length": 5.5, "sepal_width": 2.3, "petal_length": 4.0, "petal_width": 1.3}, {"name": "r55", "species": "versicolor", "sepal_length": 6.5, "sepal_width": 2.8, "petal_length": 4.6, "petal_width": 1.5}, {"name": "r56", "species": "versicolor", "sepal_length": 5.7, "sepal_width": 2.8, "petal_length": 4.5, "petal_width": 1.3}, {"name": "r57", "species": "versicolor", "sepal_length": 6.3, "sepal_width": 3.3, "petal_length": 4.7, "petal_width": 1.6}, {"name": "r58", "species": "versicolor", "sepal_length": 4.9, "sepal_width": 2.4, "petal_length": 3.3, "petal_width": 1.0}, {"name": "r59", "species": "versicolor", "sepal_length": 6.6, "sepal_width": 2.9, "petal_length": 4.6, "petal_width": 1.3}, {"name": "r60", "species": "versicolor", "sepal_length": 5.2, "sepal_width": 2.7, "petal_length": 3.9, "petal_width": 1.4}, {"name": "r101", "species": "virginica", "sepal_length": 6.3, "sepal_width": 3.3, "petal_length": 6.0, "petal_width": 2.5}, {"name": "r102", "species": "virginica", "sepal_length": 5.8, "sepal_width": 2.7, "petal_length": 5.1, "petal_width": 1.9}, {"name": "r103", "species": "virginica", "sepal_length": 7.1, "sepal_width": 3.0, "petal_length": 5.9, "petal_width": 2.1}, {"name": "r104", "species": "virginica", "sepal_length": 6.3, "sepal_width": 2.9, "petal_length": 5.6, "petal_width": 1.8}, {"name": "r105", "species": "virginica", "sepal_length": 6.5, "sepal_width": 3.0, "petal_length": 5.8, "petal_width": 2.2}, {"name": "r106", "species": "virginica", "sepal_length": 7.6, "sepal_width": 3.0, "petal_length": 6.6, "petal_width": 2.1}, {"name": "r107", "species": "virginica", "sepal_length": 4.9, "sepal_width": 2.5, "petal_length": 4.5, "petal_width": 1.7}, {"name": "r108", "species": "virginica", "sepal_length": 7.3, "sepal_width": 2.9, "petal_length": 6.3, "petal_width": 1.8}, {"name": "r109", "species": "virginica", "sepal_length": 6.7, "sepal_width": 2.5, "petal_length": 5.8, "petal_width": 1.8}, {"name": "r110", "species": "virginica", "sepal_length": 7.2, "sepal_width": 3.6, "petal_length": 6.1, "petal_width": 2.5}];            // [{ name, group, ...numericAttrs }]
+const dimensions = ["sepal_length", "sepal_width", "petal_length", "petal_width"];// ["attr1","attr2",...] numeric axes
+const groupColors = {"setosa": "#e36a4a", "versicolor": "#f0c674", "virginica": "#7fb8a4"};   // { groupName: hex }
+const groupKey = "species"; // field name for group (e.g. "class")
+
+const W = 1100, H = 560;
+const margin = {top: 40, right: 30, bottom: 28, left: 40};
+const innerW = W - margin.left - margin.right;
+const innerH = H - margin.top - margin.bottom;
+
+const svg = d3.select("#chart").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+// X positions for each dimension
+const x = d3.scalePoint().range([0, innerW]).domain(dimensions).padding(0.5);
+
+// Y scales — one per dimension, computed from data
+const y = {};
+dimensions.forEach(dim => {
+  const ext = d3.extent(data, d => +d[dim]);
+  y[dim] = d3.scaleLinear().domain(ext).nice().range([innerH, 0]);
+});
+
+// Line generator
+function pathFor(d){
+  return d3.line()(dimensions.map(dim => [x(dim), y[dim](+d[dim])]));
+}
+
+// Filters state — { dim: [min, max] | null }
+const filters = {};
+
+function passesFilters(d){
+  return dimensions.every(dim => {
+    if (!filters[dim]) return true;
+    const v = +d[dim];
+    return v >= filters[dim][0] && v <= filters[dim][1];
+  });
+}
+
+const visibleGroups = new Set(data.map(d => d[groupKey]));
+
+function isVisible(d){
+  return visibleGroups.has(d[groupKey]) && passesFilters(d);
+}
+
+// Lines
+const lineGroup = g.append("g");
+const lines = lineGroup.selectAll("path.pc-line").data(data).join("path")
+  .attr("class","pc-line")
+  .attr("d", pathFor)
+  .attr("stroke", d => groupColors[d[groupKey]] || "#7fb8a4")
+  .attr("stroke-opacity", 0.35)
+  .on("mouseenter", lineHover).on("mousemove", tipMove).on("mouseleave", clearHl);
+
+// Axes + brushes
+const axisG = g.selectAll("g.dim").data(dimensions).join("g").attr("class","dim")
+  .attr("transform", d => `translate(${x(d)},0)`);
+
+axisG.append("g").attr("class","axis").each(function(d){ d3.select(this).call(d3.axisLeft(y[d]).ticks(6));});
+axisG.append("text").attr("class","axis-title").attr("y", -16).attr("text-anchor","middle").text(d => d);
+
+// Brushes
+axisG.append("g").attr("class","brush").each(function(d){
+  const b = d3.brushY().extent([[-12, 0], [12, innerH]])
+    .on("brush end", (event) => brushed(event, d));
+  d3.select(this).call(b);
+  d3.select(this).datum({brush: b});
+});
+
+function brushed(event, dim){
+  const sel = event.selection;
+  if (!sel){ filters[dim] = null;}
+  else {
+    filters[dim] = [y[dim].invert(sel[1]), y[dim].invert(sel[0])];
+  }
+  applyFilters();
+}
+
+function applyFilters(){
+  lines.attr("stroke-opacity", d => isVisible(d) ? 0.5 : 0.04)
+    .attr("display", d => isVisible(d) ? null : null);  // keep all in DOM
+  const visCount = data.filter(d => isVisible(d)).length;
+  d3.select("#visCount").text(visCount);
+  d3.select("#totalCount").text(data.length);
+  updateSummary();
+}
+
+// Legend
+const groups = [...new Set(data.map(d => d[groupKey]))];
+const legendEl = d3.select("#legend");
+groups.forEach(grp => {
+  const row = legendEl.append("div").attr("class","legend-item").datum(grp)
+    .on("click", function(){
+      if (visibleGroups.has(grp)){ visibleGroups.delete(grp); d3.select(this).style("opacity", 0.4);}
+      else { visibleGroups.add(grp); d3.select(this).style("opacity", 1);}
+      applyFilters();
+    })
+    .on("mouseenter", () => {
+      lines.classed("dim", d => d[groupKey] !== grp);
+    })
+    .on("mouseleave", () => lines.classed("dim", false));
+  row.append("div").attr("class","sw").style("background", groupColors[grp] || "#7fb8a4");
+  row.append("div").attr("class","lbl").text(grp);
+  row.append("div").attr("class","val").text(data.filter(d => d[groupKey] === grp).length);
+});
+
+d3.select("#clearBtn").on("click", () => {
+  dimensions.forEach(dim => filters[dim] = null);
+  axisG.selectAll(".brush").each(function(d){
+    d3.select(this).call(d.brush.move, null);
+  });
+  applyFilters();
+});
+
+const tip = d3.select("#tip");
+function tipMove(e){ tip.style("left",(e.clientX+18)+"px").style("top",(e.clientY+18)+"px");}
+
+function lineHover(event, d){
+  lines.classed("dim", x => x !== d);
+  d3.select(event.currentTarget).classed("glow", true).classed("dim", false);
+  tip.select(".tname").text(d.name || "Record");
+  tip.select(".tgroup").text(d[groupKey] || "");
+  tip.select(".tv-group").text(d[groupKey] || "");
+  tip.select(".tv-axes").text(dimensions.length);
+  tip.select(".tbar").style("background", groupColors[d[groupKey]] || "#7fb8a4");
+  tip.classed("on", true);
+  showDetail(d);
+}
+
+function clearHl(){
+  lines.classed("dim", false).classed("glow", false);
+  tip.classed("on", false);
+}
+
+function showDetail(d){
+  d3.select("#dname").text(d.name || "Record");
+  d3.select("#drole").text((d[groupKey] || "") + " · all attrs");
+  const wrap = d3.select("#attrList"); wrap.html("");
+  dimensions.forEach(dim => {
+    const row = wrap.append("div").attr("class","attr-row");
+    row.append("div").attr("class","ak").text(dim);
+    row.append("div").attr("class","av").text((+d[dim]).toFixed(2));
+  });
+}
+
+function updateSummary(){
+  const wrap = d3.select("#summaryWrap"); wrap.html("");
+  wrap.append("h4").text("Visible by group");
+  groups.forEach(grp => {
+    const cnt = data.filter(x => x[groupKey] === grp && isVisible(x)).length;
+    const row = wrap.append("div").attr("class","summary-row");
+    row.append("div").attr("class","dot").style("background", groupColors[grp] || "#7fb8a4");
+    row.append("div").attr("class","nm").text(grp);
+    row.append("div").style("font-family","'JetBrains Mono',monospace").style("color","var(--ink-mute)").style("font-size","10.5px").text(cnt);
+  });
+}
+
+// Entry animation
+lines.style("opacity",0).transition().delay((d,i)=>i*4).duration(500).style("opacity",1);
+applyFilters();
+</script>
+</body>
+</html>

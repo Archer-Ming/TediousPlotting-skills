@@ -1,0 +1,33 @@
+{
+  "nodes": [
+    { "name": "Coal" },
+    { "name": "Oil" },
+    { "name": "Natural Gas" },
+    { "name": "Renewables" },
+    { "name": "Nuclear" },
+    { "name": "Power Generation" },
+    { "name": "Heat" },
+    { "name": "Transport Fuel" },
+    { "name": "Industry" },
+    { "name": "Residential" },
+    { "name": "Commercial" },
+    { "name": "Transport" }
+  ],
+  "links": [
+    { "source": "Coal",        "target": "Power Generation", "value": 32 },
+    { "source": "Coal",        "target": "Industry",         "value": 12 },
+    { "source": "Oil",         "target": "Transport Fuel",   "value": 38 },
+    { "source": "Oil",         "target": "Industry",         "value": 8 },
+    { "source": "Natural Gas", "target": "Power Generation", "value": 22 },
+    { "source": "Natural Gas", "target": "Heat",             "value": 14 },
+    { "source": "Natural Gas", "target": "Industry",         "value": 6 },
+    { "source": "Renewables",  "target": "Power Generation", "value": 18 },
+    { "source": "Nuclear",     "target": "Power Generation", "value": 10 },
+    { "source": "Power Generation", "target": "Residential", "value": 28 },
+    { "source": "Power Generation", "target": "Commercial",  "value": 22 },
+    { "source": "Power Generation", "target": "Industry",    "value": 32 },
+    { "source": "Heat",            "target": "Residential", "value": 9 },
+    { "source": "Heat",            "target": "Commercial",  "value": 5 },
+    { "source": "Transport Fuel",  "target": "Transport",   "value": 38 }
+  ]
+}

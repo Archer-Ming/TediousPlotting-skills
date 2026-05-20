@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Sunburst · 全球碳排放结构</title>
+
+<!-- 字体 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- D3 -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<style>
+  :root{
+    --bg-0:      #0b0d12;
+    --bg-1:      #11141b;
+    --bg-2:      #181c25;
+    --line:      rgba(255,255,255,0.08);
+    --line-2:    rgba(255,255,255,0.16);
+    --ink:       #ecedef;
+    --ink-dim:   #9aa0aa;
+    --ink-mute:  #5b6068;
+    --accent:    #f0c674;
+    --accent-2:  #e36a4a;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+
+  /* —— 背景细节：噪点 + 微光 —— */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%),
+      radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode:overlay;
+  }
+
+  .frame{
+    position:relative; z-index:1;
+    max-width:1400px; margin:0 auto; padding:48px 56px 64px;
+  }
+
+  /* —— 顶部标题区 —— */
+  header.title{
+    display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px;
+    padding-bottom:28px; margin-bottom:28px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em;
+    text-transform:uppercase; color:var(--ink-mute);
+    display:flex; align-items:center; gap:12px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{
+    font-family:'Fraunces', serif; font-weight:300;
+    font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em;
+    margin-top:14px;
+  }
+  h1 em{ font-style:italic; font-weight:400; color:var(--accent); }
+  .lede{ margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55; }
+  .meta{ text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{ color:var(--ink); font-weight:500;}
+
+  /* —— 主体三栏布局 —— */
+  .stage{
+    display:grid;
+    grid-template-columns: 220px 1fr 280px;
+    gap:32px; align-items:start;
+  }
+
+  /* —— 左侧：图例 + 控件 —— */
+  .panel{
+    background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0));
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:20px 18px;
+  }
+  .panel h3{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em;
+    color:var(--ink-mute); text-transform:uppercase; margin-bottom:14px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .panel h3 .idx{ color:var(--accent); }
+
+  .legend-item{
+    display:flex; align-items:center; gap:10px;
+    padding:7px 0; cursor:pointer;
+    border-bottom:1px dashed var(--line);
+    transition:all .25s ease;
+  }
+  .legend-item:last-child{border-bottom:none;}
+  .legend-item .sw{
+    width:14px; height:14px; flex-shrink:0;
+    border-radius:2px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+  }
+  .legend-item .lbl{
+    font-size:13px; color:var(--ink); flex:1;
+    font-feature-settings:"ss01";
+  }
+  .legend-item .val{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute);
+  }
+  .legend-item:hover{ transform:translateX(3px); }
+  .legend-item:hover .lbl{ color:var(--accent); }
+  .legend-item.muted{ opacity:.25;}
+
+  .controls{ margin-top:24px;}
+  .ctrl{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; font-size:12px; color:var(--ink-dim);
+    border-bottom:1px dashed var(--line);
+  }
+  .ctrl:last-child{border-bottom:none;}
+  .ctrl span{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.18em; text-transform:uppercase;}
+  .ctrl kbd{
+    font-family:'JetBrains Mono', monospace; font-size:10px;
+    background:var(--bg-2); border:1px solid var(--line-2); border-radius:2px;
+    padding:2px 6px; color:var(--ink);
+  }
+
+  /* —— 中部：旭日图 —— */
+  .chart-wrap{
+    position:relative;
+    aspect-ratio: 1 / 1;
+    display:flex; justify-content:center; align-items:center;
+  }
+  .chart-wrap svg{ width:100%; height:100%; display:block; cursor:default; overflow:visible;}
+
+  /* 路径动效 */
+  .arc{
+    cursor:pointer;
+    transition: opacity .25s ease, filter .25s ease, stroke-width .2s ease;
+  }
+  .arc:hover{ filter: brightness(1.18) saturate(1.1); }
+  .arc.dim{ opacity:.22;}
+  .arc.glow{ filter: drop-shadow(0 0 14px rgba(240,198,116,.5)) brightness(1.15); stroke:#0b0d12; stroke-width:1.5px;}
+
+  /* 弧上文字 */
+  .arc-label{
+    font-family:'Inter Tight', sans-serif;
+    font-size:10px; font-weight:500;
+    fill:rgba(11,13,18,.85);
+    pointer-events:none;
+    letter-spacing:.04em;
+  }
+  .arc-label-outer{
+    font-family:'Inter Tight', sans-serif;
+    font-size:9.5px; font-weight:400;
+    fill:var(--ink-dim);
+    pointer-events:none;
+  }
+
+  /* 中心数字 */
+  .center-num{
+    font-family:'Fraunces', serif;
+    font-weight:300;
+    fill:var(--ink);
+    text-anchor:middle;
+  }
+  .center-lbl{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px; letter-spacing:.22em;
+    fill:var(--ink-mute); text-anchor:middle; text-transform:uppercase;
+  }
+  .center-back{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9px; letter-spacing:.22em;
+    fill:var(--accent); text-anchor:middle; cursor:pointer;
+    text-transform:uppercase;
+    transition: fill .2s;
+  }
+  .center-back:hover{ fill:#fff;}
+
+  /* —— 右侧：详情面板 —— */
+  .detail{ min-height:300px;}
+  .detail .name{
+    font-family:'Fraunces', serif; font-weight:400;
+    font-size:26px; line-height:1.15; letter-spacing:-.01em;
+    margin-bottom:6px;
+  }
+  .detail .breadcrumb{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px; color:var(--ink-mute); letter-spacing:.18em;
+    margin-bottom:18px; text-transform:uppercase;
+    word-break: break-word;
+  }
+  .detail .stat-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:14px 0; border-bottom:1px solid var(--line);
+  }
+  .detail .stat-row .k{ font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .detail .stat-row .v{ font-family:'Fraunces', serif; font-weight:300; font-size:22px; color:var(--ink);}
+  .detail .stat-row .v small{ font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--ink-mute); margin-left:4px;}
+
+  .progress{
+    margin-top:18px;
+    height:3px; background:var(--bg-2); position:relative; overflow:hidden;
+  }
+  .progress .bar{
+    position:absolute; left:0; top:0; bottom:0; width:0%;
+    background:linear-gradient(90deg, var(--accent-2), var(--accent));
+    transition: width .8s cubic-bezier(.5,0,.2,1);
+  }
+  .progress-lbl{
+    margin-top:8px;
+    display:flex; justify-content:space-between;
+    font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.1em;
+  }
+
+  .children-list{margin-top:24px;}
+  .children-list h4{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em;
+    color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;
+  }
+  .child-bar{
+    display:flex; align-items:center; gap:10px; padding:7px 0; font-size:12px;
+    cursor:pointer; transition: all .2s;
+  }
+  .child-bar:hover{ padding-left:4px;}
+  .child-bar .cdot{ width:8px; height:8px; flex-shrink:0; border-radius:1px;}
+  .child-bar .cname{ flex:1; color:var(--ink);}
+  .child-bar .cval{ font-family:'JetBrains Mono', monospace; color:var(--ink-mute); font-size:10.5px;}
+  .child-bar .cbar{
+    position:absolute; left:0; bottom:0; height:1px;
+    background:var(--accent); opacity:.4;
+    transition: width .5s;
+  }
+  .child-bar{ position:relative;}
+
+  /* —— Tooltip —— */
+  .tip{
+    position:fixed; pointer-events:none; z-index:99;
+    background:rgba(17,20,27,.96);
+    border:1px solid var(--line-2); border-radius:2px;
+    padding:10px 14px; min-width:160px;
+    font-size:12px; color:var(--ink);
+    box-shadow: 0 20px 40px rgba(0,0,0,.4);
+    backdrop-filter: blur(8px);
+    opacity:0; transform: translateY(4px);
+    transition: opacity .15s, transform .15s;
+  }
+  .tip.on{ opacity:1; transform:translateY(0);}
+  .tip .tname{ font-family:'Fraunces', serif; font-size:16px; font-weight:400; margin-bottom:4px;}
+  .tip .tpath{ font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
+  .tip .trow{ display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .trow .tv{color:var(--ink);}
+  .tip .tcolor{ width:100%; height:2px; margin-top:8px; background:var(--accent);}
+
+  /* —— 底部分析区 —— */
+  .analysis{
+    margin-top:72px; padding-top:36px; border-top:1px solid var(--line);
+    display:grid; grid-template-columns:1fr 1fr; gap:48px;
+  }
+  .analysis h2{
+    font-family:'Fraunces', serif; font-weight:300;
+    font-size:26px; margin-bottom:6px; letter-spacing:-.01em;
+  }
+  .analysis h2 .num{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--accent);
+    letter-spacing:.2em; margin-right:12px; vertical-align:middle;
+  }
+  .analysis .sub{
+    font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute);
+    letter-spacing:.22em; text-transform:uppercase; margin-bottom:22px;
+  }
+  .analysis dl{ display:grid; grid-template-columns: 24px 1fr; row-gap:14px; column-gap:14px;}
+  .analysis dt{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--accent);
+    padding-top:2px;
+  }
+  .analysis dd{ font-size:13.5px; line-height:1.65; color:var(--ink-dim);}
+  .analysis dd b{ color:var(--ink); font-weight:500;}
+
+  /* 响应式 */
+  @media (max-width: 1100px){
+    .stage{ grid-template-columns: 1fr; }
+    .frame{padding:32px 24px;}
+    header.title{grid-template-columns:1fr; gap:20px;}
+    .meta{text-align:left;}
+    .analysis{grid-template-columns:1fr; gap:36px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- 顶部标题 -->
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> Visual Idiom · Sunburst Diagram · Assignment 02</div>
+      <h1>The Weight of <em>Carbon</em><br>Across Our Continents.</h1>
+      <p class="lede">An interactive hierarchical breakdown of global CO<sub>2</sub> emissions — continent → country → sector. Click any arc to zoom in; click the center to ascend.</p>
+    </div>
+    <div class="meta">
+      <b>CST3093A</b> &nbsp; / &nbsp; VIS · A&D <br>
+      Dataset · 2024 (illustrative) <br>
+      Idiom · <b>Sunburst</b> &nbsp; / &nbsp; Marks · arcs
+    </div>
+  </header>
+
+  <!-- 主体 -->
+  <div class="stage">
+
+    <!-- 左侧 -->
+    <aside class="panel">
+      <h3><span>Continents</span><span class="idx">L1</span></h3>
+      <div id="legend"></div>
+
+      <div class="controls">
+        <h3><span>Interactions</span><span class="idx">04</span></h3>
+        <div class="ctrl"><span>Zoom in</span><kbd>Click arc</kbd></div>
+        <div class="ctrl"><span>Zoom out</span><kbd>Click center</kbd></div>
+        <div class="ctrl"><span>Inspect</span><kbd>Hover</kbd></div>
+        <div class="ctrl"><span>Filter</span><kbd>Legend</kbd></div>
+      </div>
+    </aside>
+
+    <!-- 中间图表 -->
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="-320 -320 640 640" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <!-- 右侧详情 -->
+    <aside class="detail">
+      <div class="breadcrumb" id="bc">— Root selection —</div>
+      <div class="name" id="dname">Global Emissions</div>
+
+      <div class="stat-row">
+        <span class="k">Value</span>
+        <span class="v" id="dval">—<small>GT CO₂</small></span>
+      </div>
+      <div class="stat-row">
+        <span class="k">Share</span>
+        <span class="v" id="dshare">—<small>%</small></span>
+      </div>
+      <div class="stat-row">
+        <span class="k">Depth</span>
+        <span class="v" id="ddepth">—<small>level</small></span>
+      </div>
+
+      <div class="progress"><div class="bar" id="pbar"></div></div>
+      <div class="progress-lbl"><span>0%</span><span id="pctText">—</span><span>100%</span></div>
+
+      <div class="children-list" id="childWrap"></div>
+    </aside>
+  </div>
+
+  <!-- 底部分析 -->
+  <section class="analysis">
+    <div>
+      <div class="sub">Step 02</div>
+      <h2><span class="num">02</span>Visual Idiom</h2>
+      <dl>
+        <dt>i</dt>   <dd><b>Name —</b> Sunburst Diagram（旭日图 / 径向树图），又称 radial space-filling hierarchy。</dd>
+        <dt>ii</dt>  <dd><b>Marks —</b> 弧段（arc / annular sector）。每一个弧段代表层级树中的一个节点；环心代表树根。</dd>
+        <dt>iii</dt> <dd><b>Visual variables —</b> ① <b>角度</b>编码数值大小（最精确通道）；② <b>径向距离</b>编码层级深度；③ <b>色相</b>编码顶层分类（洲）；④ <b>明度</b>编码同分类内的子项区分；⑤ <b>位置</b>（顺时针起始角）继承自父节点，保持上下文。</dd>
+        <dt>iv</dt>  <dd><b>Interaction —</b> <b>Click-to-zoom</b>（点击下钻 / 中心回溯）支持层级聚焦；<b>Hover</b> 触发 tooltip 与高亮，承担细节按需查询；<b>Legend filter</b> 支持类别筛选；<b>Linked detail panel</b> 实现联动视图（linked highlighting / brushing 思想）。</dd>
+        <dt>v</dt>   <dd><b>Data structure —</b> 严格的 <b>tree（层级 / hierarchy）</b>结构 — 每节点恰有一父节点，叶节点携带定量数值，非叶节点的值 = 子节点之和。</dd>
+        <dt>vi</dt>  <dd><b>Tasks —</b> ① 比较整体组成（part-to-whole）；② 在层级间逐层下钻；③ 识别贡献度最大的子类；④ 跨同级分支做相对量级比较。</dd>
+        <dt>vii</dt> <dd><b>Scalability —</b> 较好支持 <b>3–5 层</b>、每层 <b>≤ 20 个</b>子节点的中等规模层级；过深或过细时外环弧度极小，文字与角度判读失效。对极度稀疏 / 极度不平衡的树效果差。</dd>
+      </dl>
+    </div>
+
+    <div>
+      <div class="sub">Step 03</div>
+      <h2><span class="num">03</span>Perceptual Principles</h2>
+      <dl>
+        <dt>i</dt>   <dd><b>Preattentive features —</b> 颜色（hue）、明度（luminance）与封闭形状（closure）在 200ms 内即可被并行处理。本设计中 <b>hover 高亮 + 同源弧段保留高亮、其余降低不透明度</b>形成强 <b>pop-out</b> 效果，引导注意力到当前路径；中心数字使用 serif 高对比字形成视觉锚点。</dd>
+        <dt>ii</dt>  <dd><b>Colour —</b> 采用 7 个色相的离散类别色 + 同色相多明度梯度，避开红绿同时承担类别意义，整体在 deuteranopia / protanopia 下仍可凭明度区分；深色背景 (#0b0d12) 与暖色弧段保持 <b>WCAG AA</b> 级以上对比；语义上"碳排放"采用暖色系（琥珀-赭红-土黄）以承载主题情绪。</dd>
+        <dt>iii</dt> <dd><b>Gestalt —</b> ① <b>邻近性</b>：同父节点的子弧紧邻排列；② <b>相似性</b>：同色相暗示同分类；③ <b>共同区域</b>：环状结构本身构成"封闭层"；④ <b>连续性</b>：径向从内向外形成自然阅读流；⑤ <b>图形-背景</b>：深背景 + 噪点纹理压低环境，让弧段稳定浮于前景。</dd>
+      </dl>
+    </div>
+  </section>
+
+</div>
+
+<!-- Tooltip -->
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="tpath"></div>
+  <div class="trow"><span class="tk">Value</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Share of parent</span><span class="tv tv-share"></span></div>
+  <div class="trow"><span class="tk">Share of total</span><span class="tv tv-global"></span></div>
+  <div class="tcolor"></div>
+</div>
+
+<script>
+/* ========================================================================
+   数据 —— 全球碳排放（示意数据，单位:亿吨 CO2）
+   三层：洲 → 国家 → 行业
+   ======================================================================== */
+const data = {
+  name: "Global",
+  children: [
+    {
+      name: "Asia", children: [
+        { name: "China", children: [
+          { name: "Power",      value: 4.6 },
+          { name: "Industry",   value: 3.2 },
+          { name: "Transport",  value: 1.1 },
+          { name: "Buildings",  value: 0.9 },
+          { name: "Other",      value: 0.5 },
+        ]},
+        { name: "India", children: [
+          { name: "Power",      value: 1.4 },
+          { name: "Industry",   value: 0.7 },
+          { name: "Transport",  value: 0.4 },
+          { name: "Agriculture",value: 0.3 },
+        ]},
+        { name: "Japan", children: [
+          { name: "Power",      value: 0.45 },
+          { name: "Industry",   value: 0.35 },
+          { name: "Transport",  value: 0.20 },
+        ]},
+        { name: "S. Korea", children: [
+          { name: "Industry",   value: 0.30 },
+          { name: "Power",      value: 0.25 },
+        ]},
+        { name: "Others Asia", value: 1.3 },
+      ]
+    },
+    {
+      name: "N. America", children: [
+        { name: "USA", children: [
+          { name: "Transport",  value: 1.8 },
+          { name: "Power",      value: 1.6 },
+          { name: "Industry",   value: 1.0 },
+          { name: "Buildings",  value: 0.6 },
+        ]},
+        { name: "Canada", children: [
+          { name: "Oil & Gas",  value: 0.30 },
+          { name: "Transport",  value: 0.20 },
+          { name: "Industry",   value: 0.15 },
+        ]},
+        { name: "Mexico", children: [
+          { name: "Power",      value: 0.18 },
+          { name: "Transport",  value: 0.16 },
+          { name: "Industry",   value: 0.10 },
+        ]},
+      ]
+    },
+    {
+      name: "Europe", children: [
+        { name: "Germany", children: [
+          { name: "Industry",   value: 0.28 },
+          { name: "Power",      value: 0.22 },
+          { name: "Transport",  value: 0.18 },
+        ]},
+        { name: "UK", children: [
+          { name: "Transport",  value: 0.13 },
+          { name: "Power",      value: 0.10 },
+          { name: "Buildings",  value: 0.09 },
+        ]},
+        { name: "France", children: [
+          { name: "Transport",  value: 0.14 },
+          { name: "Industry",   value: 0.10 },
+          { name: "Buildings",  value: 0.08 },
+        ]},
+        { name: "Italy", children: [
+          { name: "Industry",   value: 0.11 },
+          { name: "Transport",  value: 0.10 },
+        ]},
+        { name: "Others EU", value: 0.80 },
+      ]
+    },
+    {
+      name: "M. East", children: [
+        { name: "Saudi Arabia", children: [
+          { name: "Oil & Gas",  value: 0.36 },
+          { name: "Power",      value: 0.18 },
+        ]},
+        { name: "Iran", children: [
+          { name: "Oil & Gas",  value: 0.28 },
+          { name: "Power",      value: 0.16 },
+        ]},
+        { name: "UAE",   value: 0.22 },
+        { name: "Others ME", value: 0.45 },
+      ]
+    },
+    {
+      name: "Africa", children: [
+        { name: "S. Africa", children: [
+          { name: "Power",      value: 0.32 },
+          { name: "Industry",   value: 0.12 },
+        ]},
+        { name: "Egypt",     value: 0.25 },
+        { name: "Nigeria",   value: 0.13 },
+        { name: "Others Afr.", value: 0.55 },
+      ]
+    },
+    {
+      name: "S. America", children: [
+        { name: "Brazil", children: [
+          { name: "Transport",  value: 0.22 },
+          { name: "Agriculture",value: 0.18 },
+          { name: "Industry",   value: 0.10 },
+        ]},
+        { name: "Argentina", value: 0.18 },
+        { name: "Others SA", value: 0.30 },
+      ]
+    },
+    {
+      name: "Oceania", children: [
+        { name: "Australia", children: [
+          { name: "Power",      value: 0.18 },
+          { name: "Mining",     value: 0.10 },
+          { name: "Transport",  value: 0.08 },
+        ]},
+        { name: "Others Oc.", value: 0.06 },
+      ]
+    },
+  ]
+};
+
+/* —— 配色：每个洲一个色相，外圈用同色相不同明度 —— */
+const continentColors = {
+  "Asia":       "#e36a4a",   // 赭红
+  "N. America": "#f0c674",   // 琥珀
+  "Europe":     "#7fb8a4",   // 青绿
+  "M. East":    "#c98a5b",   // 焦糖
+  "Africa":     "#b88ec2",   // 紫罗兰
+  "S. America": "#6a9bd1",   // 钢蓝
+  "Oceania":    "#d6b85a",   // 麦秆
+};
+
+/* ========================================================================
+   D3 — 旭日图构建
+   ======================================================================== */
+const radius = 300;
+const svg    = d3.select("#chart");
+const g      = svg.append("g");
+
+// 层级与排布
+const root = d3.hierarchy(data)
+  .sum(d => d.value || 0)
+  .sort((a,b) => b.value - a.value);
+
+const partition = d3.partition().size([2 * Math.PI, root.height + 1]);
+partition(root);
+root.each(d => d.current = d);
+
+const totalValue = root.value;
+
+// 改进④：识别前 3 大叶子节点，用于突出显示其数值
+const topLeaves = new Set(
+  root.descendants()
+    .filter(d => !d.children && d.depth > 0)
+    .sort((a,b) => b.value - a.value)
+    .slice(0, 3)
+);
+
+// 颜色函数：根据所属洲 + 深度调整明度
+function colorFor(node){
+  if (!node.parent) return "transparent";   // root
+  // 找到所属顶层（洲）
+  let top = node;
+  while (top.depth > 1) top = top.parent;
+  const base = continentColors[top.data.name] || "#888";
+
+  // 不同深度做明度调整：深度越大 → 略亮 / 略灰
+  const hsl = d3.hsl(base);
+  if (node.depth === 1) return hsl.formatHex();
+  if (node.depth === 2){ hsl.l = Math.min(.78, hsl.l + .08); return hsl.formatHex();}
+  if (node.depth === 3){ hsl.l = Math.min(.85, hsl.l + .18); hsl.s *= .85; return hsl.formatHex();}
+  return hsl.formatHex();
+}
+
+// 弧生成器
+const arc = d3.arc()
+  .startAngle(d => d.x0)
+  .endAngle(d => d.x1)
+  .padAngle(d => Math.min((d.x1 - d.x0)/2, 0.005))
+  .padRadius(radius * 1.5)
+  .innerRadius(d => d.y0 * radius / 4)
+  .outerRadius(d => Math.max(d.y0 * radius / 4, d.y1 * radius / 4 - 1));
+
+// 绘制弧
+const arcs = g.append("g")
+  .selectAll("path")
+  .data(root.descendants().slice(1))
+  .join("path")
+  .attr("class","arc")
+  .attr("fill", d => colorFor(d))
+  .attr("fill-opacity", d => arcVisible(d.current) ? (d.children ? 0.92 : 0.78) : 0)
+  .attr("pointer-events", d => arcVisible(d.current) ? "auto" : "none")
+  .attr("d", d => arc(d.current))
+  .on("click", (event, d) => {
+    // 叶节点：点击后回到父节点（提供退路）
+    // 非叶节点：下钻到该节点
+    if (d.children) clicked(event, d);
+    else if (d.parent) clicked(event, d.parent);
+  })
+  .on("mouseenter", mouseEnter)
+  .on("mousemove", mouseMove)
+  .on("mouseleave", mouseLeave);
+
+// 弧上文字（仅角度足够时）
+const labels = g.append("g")
+  .attr("pointer-events","none")
+  .attr("text-anchor","middle")
+  .selectAll("text")
+  .data(root.descendants().slice(1))
+  .join("text")
+  .attr("class", d => d.depth === 1 ? "arc-label" : "arc-label-outer")
+  .attr("dy","0.35em")
+  .attr("fill-opacity", d => +labelVisible(d.current))
+  .attr("transform", d => labelTransform(d.current))
+  .text(d => d.data.name);
+
+// 改进④：前 3 大叶子节点显示数值徽章（mono 风格）
+const valueLabels = g.append("g")
+  .attr("pointer-events","none")
+  .attr("text-anchor","middle")
+  .selectAll("text")
+  .data(root.descendants().filter(d => topLeaves.has(d)))
+  .join("text")
+  .attr("class","arc-value-label")
+  .attr("dy","1.6em")
+  .attr("font-family","'JetBrains Mono', monospace")
+  .attr("font-size", 9)
+  .attr("fill", "rgba(11,13,18,0.72)")
+  .attr("fill-opacity", d => labelVisible(d.current) ? 0.9 : 0)
+  .attr("transform", d => labelTransform(d.current))
+  .text(d => d.value.toFixed(2));
+
+// 当前焦点节点（图的"根"）
+let focus = root;
+
+// 中心区域
+const centerG = g.append("g").attr("class","center-g");
+const centerCircle = centerG.append("circle")
+  .attr("r", radius / 4 - 6)
+  .attr("fill", "var(--bg-1)")
+  .attr("stroke","var(--line-2)")
+  .attr("stroke-width", 0.5)
+  .style("cursor","pointer")
+  .on("click", () => {
+    if (focus.parent) clicked(null, focus.parent);
+  });
+
+const centerBack = centerG.append("text")
+  .attr("class","center-back")
+  .attr("y", -28)
+  .attr("opacity", 0)
+  .text("↑ BACK");
+
+const centerNum = centerG.append("text")
+  .attr("class","center-num")
+  .attr("y", 6)
+  .attr("font-size", 36)
+  .text(totalValue.toFixed(2));
+
+const centerLbl = centerG.append("text")
+  .attr("class","center-lbl")
+  .attr("y", 30)
+  .text("GT CO₂ · TOTAL");
+
+/* ========================================================================
+   交互逻辑
+   ======================================================================== */
+function arcVisible(d){
+  return d.y1 <= 4 && d.y0 >= 1 && d.x1 > d.x0;
+}
+function labelVisible(d){
+  return d.y1 <= 4 && d.y0 >= 1 && (d.x1 - d.x0) * (d.y1 + d.y0) / 2 > 0.04;
+}
+function labelTransform(d){
+  const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
+  const y = (d.y0 + d.y1) / 2 * radius / 4;
+  return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+}
+
+function clicked(event, p){
+  if (!p) return;
+  // 已经在该层就忽略；叶节点不允许下钻（只允许悬停）
+  if (p === focus && !event) return;
+  if (p === focus) return;
+
+  focus = p;
+
+  root.each(d => d.target = {
+    x0: Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+    x1: Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) * 2 * Math.PI,
+    y0: Math.max(0, d.y0 - p.depth),
+    y1: Math.max(0, d.y1 - p.depth),
+  });
+
+  const t = g.transition().duration(820).ease(d3.easeCubicInOut);
+
+  arcs.transition(t)
+    .tween("data", d => {
+      const i = d3.interpolate(d.current, d.target);
+      return tt => d.current = i(tt);
+    })
+    .filter(function(d){
+      return +this.getAttribute("fill-opacity") || arcVisible(d.target);
+    })
+    .attr("fill-opacity", d => arcVisible(d.target) ? (d.children ? 0.92 : 0.78) : 0)
+    .attr("pointer-events", d => arcVisible(d.target) ? "auto" : "none")
+    .attrTween("d", d => () => arc(d.current));
+
+  labels.filter(function(d){
+      return +this.getAttribute("fill-opacity") || labelVisible(d.target);
+    }).transition(t)
+    .attr("fill-opacity", d => +labelVisible(d.target))
+    .attrTween("transform", d => () => labelTransform(d.current));
+
+  // 改进④的 value labels 同步 zoom
+  valueLabels.transition(t)
+    .attr("fill-opacity", d => labelVisible(d.target) ? 0.9 : 0)
+    .attrTween("transform", d => () => labelTransform(d.current));
+
+  // 中心数字与 BACK 文字
+  const newVal = p.value;
+  const oldVal = +centerNum.text();
+  centerNum.transition().duration(820)
+    .tween("text", function(){
+      const i = d3.interpolateNumber(oldVal, newVal);
+      return function(tt){ this.textContent = i(tt).toFixed(2); };
+    });
+
+  // 中心标签：根节点显示 "TOTAL"，否则显示父节点名
+  centerLbl.transition().duration(400)
+    .attr("opacity", 0)
+    .transition().duration(400)
+    .attr("opacity", 1)
+    .text(p === root ? "GT CO₂ · TOTAL" : (p.data.name + " · GT CO₂").toUpperCase());
+
+  // 显示 / 隐藏 BACK
+  centerBack.transition().duration(400)
+    .attr("opacity", p === root ? 0 : 1);
+
+  updateDetail(p);
+}
+
+/* —— Tooltip —— */
+const tip = d3.select("#tip");
+function mouseEnter(event, d){
+  // 高亮当前祖先链 + 自身后代
+  const ancestors = new Set(d.ancestors());
+  arcs.classed("dim", n => !ancestors.has(n) && !n.ancestors().includes(d));
+  arcs.filter(n => n === d).classed("glow", true);
+
+  // 同步左侧 legend
+  d3.selectAll(".legend-item").classed("muted", li => {
+    const name = li.name;
+    let top = d; while (top.depth > 1) top = top.parent;
+    return name !== top.data.name;
+  });
+
+  // tooltip 内容 — 完整层级路径（包含根，用 . 分隔）
+  const path = d.ancestors().reverse().map(a => a.data.name).join(".");
+  const parentShare = d.parent ? (d.value / d.parent.value * 100) : 100;
+  const globalShare = d.value / totalValue * 100;
+
+  tip.select(".tname").text(d.data.name);
+  tip.select(".tpath").text(path);
+  tip.select(".tv-val").html(`${d.value.toFixed(2)} <span style="color:var(--ink-mute)">GT</span>`);
+  tip.select(".tv-share").text(parentShare.toFixed(1) + "%");
+  tip.select(".tv-global").text(globalShare.toFixed(2) + "%");
+  tip.select(".tcolor").style("background", colorFor(d));
+  tip.classed("on", true);
+
+  updateDetail(d, true);
+}
+function mouseMove(event){
+  tip.style("left", (event.clientX + 18) + "px")
+     .style("top",  (event.clientY + 18) + "px");
+}
+function mouseLeave(){
+  arcs.classed("dim", false).classed("glow", false);
+  d3.selectAll(".legend-item").classed("muted", false);
+  tip.classed("on", false);
+  updateDetail(currentParent);
+}
+
+/* ========================================================================
+   左侧 Legend
+   ======================================================================== */
+const legendEl = d3.select("#legend");
+root.children.forEach(c => {
+  const row = legendEl.append("div")
+    .attr("class","legend-item")
+    .datum(c)
+    .property("name", c.data.name)
+    .on("click", function(_, d){ clicked(null, d); })
+    .on("mouseenter", function(_, d){
+      arcs.classed("dim", n => {
+        let top = n; while (top.depth > 1) top = top.parent;
+        return top.data.name !== d.data.name;
+      });
+    })
+    .on("mouseleave", function(){
+      arcs.classed("dim", false);
+    });
+  row.append("div").attr("class","sw").style("background", continentColors[c.data.name]);
+  row.append("div").attr("class","lbl").text(c.data.name);
+  row.append("div").attr("class","val").text(c.value.toFixed(2));
+});
+
+/* ========================================================================
+   右侧详情面板
+   ======================================================================== */
+function updateDetail(node, isHover=false){
+  const path = node.ancestors().reverse().map(a => a.data.name).join("  ▸  ");
+  const parentShare = node.parent ? (node.value / node.parent.value * 100) : 100;
+  const globalShare = node.value / totalValue * 100;
+
+  d3.select("#bc").text(path);
+  d3.select("#dname").text(node.data.name);
+  d3.select("#dval").html(node.value.toFixed(2) + "<small>GT CO₂</small>");
+  d3.select("#dshare").html(parentShare.toFixed(1) + "<small>%</small>");
+  d3.select("#ddepth").html(node.depth + "<small>/ " + root.height + "</small>");
+
+  d3.select("#pbar").style("width", globalShare + "%");
+  d3.select("#pctText").text(globalShare.toFixed(2) + "% of global");
+
+  // 子项列表
+  const wrap = d3.select("#childWrap");
+  wrap.html("");
+  if (node.children && node.children.length){
+    wrap.append("h4").text("Sub-components · " + node.children.length);
+    const max = d3.max(node.children, c => c.value);
+    node.children.slice().sort((a,b)=>b.value-a.value).forEach(c => {
+      const row = wrap.append("div").attr("class","child-bar")
+        .on("click", () => clicked(null, c))
+        .on("mouseenter", () => {
+          arcs.classed("dim", n => n !== c && !n.ancestors().includes(c));
+        })
+        .on("mouseleave", () => arcs.classed("dim", false));
+      row.append("div").attr("class","cdot").style("background", colorFor(c));
+      row.append("div").attr("class","cname").text(c.data.name);
+      row.append("div").attr("class","cval").text(c.value.toFixed(2));
+      row.append("div").attr("class","cbar").style("width", (c.value / max * 100) + "%");
+    });
+  } else {
+    wrap.append("h4").text("Leaf node · no sub-components");
+  }
+}
+updateDetail(root);
+
+/* —— 初次入场动画 —— */
+arcs.attr("fill-opacity", 0)
+  .transition()
+  .delay((d,i) => 30 + i * 12)
+  .duration(700)
+  .ease(d3.easeCubicOut)
+  .attr("fill-opacity", d => arcVisible(d.current) ? (d.children ? 0.92 : 0.78) : 0);
+
+labels.attr("fill-opacity", 0)
+  .transition()
+  .delay((d,i) => 500 + i * 8)
+  .duration(500)
+  .attr("fill-opacity", d => +labelVisible(d.current));
+
+valueLabels.attr("fill-opacity", 0)
+  .transition()
+  .delay(900)
+  .duration(500)
+  .attr("fill-opacity", d => labelVisible(d.current) ? 0.9 : 0);
+</script>
+
+</body>
+</html>

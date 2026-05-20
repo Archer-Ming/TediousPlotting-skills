@@ -1,0 +1,34 @@
+{
+  "nodes": [
+    { "id": "Alice",    "group": "Engineering", "value": 8 },
+    { "id": "Bob",      "group": "Engineering", "value": 6 },
+    { "id": "Carol",    "group": "Engineering", "value": 7 },
+    { "id": "Dave",     "group": "Design",      "value": 5 },
+    { "id": "Eve",      "group": "Design",      "value": 4 },
+    { "id": "Frank",    "group": "Product",     "value": 9 },
+    { "id": "Grace",    "group": "Product",     "value": 6 },
+    { "id": "Heidi",    "group": "Marketing",   "value": 5 },
+    { "id": "Ivan",     "group": "Marketing",   "value": 3 },
+    { "id": "Judy",     "group": "Operations",  "value": 4 },
+    { "id": "Karl",     "group": "Operations",  "value": 5 },
+    { "id": "Liam",     "group": "Engineering", "value": 6 }
+  ],
+  "links": [
+    { "source": "Alice", "target": "Bob",   "value": 5 },
+    { "source": "Alice", "target": "Carol", "value": 4 },
+    { "source": "Bob",   "target": "Carol", "value": 6 },
+    { "source": "Carol", "target": "Liam",  "value": 4 },
+    { "source": "Alice", "target": "Liam",  "value": 3 },
+    { "source": "Dave",  "target": "Eve",   "value": 7 },
+    { "source": "Dave",  "target": "Frank", "value": 3 },
+    { "source": "Eve",   "target": "Grace", "value": 2 },
+    { "source": "Frank", "target": "Grace", "value": 8 },
+    { "source": "Frank", "target": "Alice", "value": 5 },
+    { "source": "Grace", "target": "Heidi", "value": 4 },
+    { "source": "Heidi", "target": "Ivan",  "value": 6 },
+    { "source": "Ivan",  "target": "Grace", "value": 2 },
+    { "source": "Judy",  "target": "Karl",  "value": 5 },
+    { "source": "Karl",  "target": "Frank", "value": 3 },
+    { "source": "Judy",  "target": "Alice", "value": 2 }
+  ]
+}

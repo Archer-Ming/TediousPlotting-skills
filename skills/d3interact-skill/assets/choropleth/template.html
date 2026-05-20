@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Choropleth · {{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://d3js.org/d3-geo.v3.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background: radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%), radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); mix-blend-mode:overlay;}
+  .frame{position:relative; z-index:1; max-width:1500px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+
+  .stage{display:grid; grid-template-columns: 1fr 280px; gap:28px;}
+  .chart-wrap{background:var(--bg-1); border:1px solid var(--line); padding:24px; position:relative;}
+  .chart-wrap svg.map-svg{width:100%; height:auto; display:block; cursor:grab;}
+  .chart-wrap svg.map-svg:active{cursor:grabbing;}
+
+  .region{transition: fill .25s, stroke-width .2s, filter .2s; cursor:pointer;}
+  .region:hover{filter: brightness(1.18) saturate(1.1); stroke-width:1.5px;}
+  .region.dim{opacity:.25;}
+  .region.glow{stroke:var(--accent); stroke-width:2px; filter: drop-shadow(0 0 6px rgba(240,198,116,.4)) brightness(1.1);}
+  .region-no-data{fill:var(--bg-2); stroke:var(--line);}
+
+  /* Legend (color ramp) */
+  .scale-legend{position:absolute; bottom:24px; left:24px; padding:14px 16px; background:rgba(11,13,18,0.85); border:1px solid var(--line); backdrop-filter: blur(6px); width:280px;}
+  .scale-legend h4{font-family:'JetBrains Mono', monospace; font-size:9.5px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .scale-ramp{width:100%; height:14px; border:1px solid var(--line-2);}
+  .scale-labels{display:flex; justify-content:space-between; margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-dim);}
+
+  /* Top-N panel (top right of map) */
+  .top-panel{position:absolute; top:24px; right:24px; padding:14px 16px; background:rgba(11,13,18,0.85); border:1px solid var(--line); backdrop-filter: blur(6px); width:200px;}
+  .top-panel h4{font-family:'JetBrains Mono', monospace; font-size:9.5px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .top-row{display:flex; align-items:center; gap:8px; padding:5px 0; font-size:12px; cursor:pointer; position:relative; transition: padding .2s;}
+  .top-row:hover{padding-left:4px;}
+  .top-row .rk{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); width:16px;}
+  .top-row .nm{flex:1; color:var(--ink); font-size:11.5px;}
+  .top-row .vl{font-family:'JetBrains Mono', monospace; font-size:10.5px; color:var(--accent);}
+  .top-row .br{position:absolute; left:0; bottom:0; height:1px; background:var(--accent); opacity:.4;}
+
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line); align-self:start;}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:26px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .role{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase;}
+  .stat-row{display:flex; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:22px;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+  .controls{margin-top:20px; padding-top:16px; border-top:1px solid var(--line);}
+  .ctrl{display:flex; justify-content:space-between; padding:8px 0; font-size:11px; color:var(--ink-dim); font-family:'JetBrains Mono', monospace; letter-spacing:.08em;}
+  .ctrl kbd{background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink); font-family:'JetBrains Mono', monospace; font-size:10px;}
+
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:170px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+  @media (max-width: 1100px){.stage{grid-template-columns:1fr;} .frame{padding:32px 24px;} header.title{grid-template-columns:1fr;} .meta{text-align:left;} .scale-legend, .top-panel{position:static; width:auto; margin-top:14px;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> {{EYEBROW}}</div>
+      <h1>{{H1_LEFT}} <em>{{H1_EM}}</em><br>{{H1_RIGHT}}</h1>
+      <p class="lede">{{LEDE}}</p>
+    </div>
+    <div class="meta">
+      <b>{{META_TITLE}}</b> &nbsp; / &nbsp; {{META_SUB}}<br>
+      Dataset · {{META_DATA}}<br>
+      Idiom · <b>Choropleth</b> &nbsp; / &nbsp; Marks · regions
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="chart-wrap">
+      <svg id="chart" class="map-svg"></svg>
+      <div class="scale-legend">
+        <h4>{{LEGEND_TITLE}}</h4>
+        <svg id="rampSvg" width="100%" height="14"></svg>
+        <div class="scale-labels">
+          <span id="scaleMin">—</span>
+          <span id="scaleMid">—</span>
+          <span id="scaleMax">—</span>
+        </div>
+      </div>
+      <div class="top-panel">
+        <h4>Top regions</h4>
+        <div id="topList"></div>
+      </div>
+    </div>
+
+    <aside class="panel-detail">
+      <h3>Selection</h3>
+      <div class="name" id="dname">— hover a region —</div>
+      <div class="role" id="drole">{{DEFAULT_HINT}}</div>
+      <div class="stat-row"><span class="k">Value</span><span class="v" id="dval">—<small>{{UNIT}}</small></span></div>
+      <div class="stat-row"><span class="k">Rank</span><span class="v" id="drank">—<small>of N</small></span></div>
+      <div class="stat-row"><span class="k">vs. mean</span><span class="v" id="dvmean">—<small>%</small></span></div>
+      <div class="stat-row"><span class="k">Percentile</span><span class="v" id="dpct">—<small>%</small></span></div>
+      <div class="controls">
+        <div class="ctrl"><span>Inspect</span><kbd>Hover</kbd></div>
+        <div class="ctrl"><span>Zoom</span><kbd>Wheel</kbd></div>
+        <div class="ctrl"><span>Pan</span><kbd>Drag</kbd></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="trow"><span class="tk">Value</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Rank</span><span class="tv tv-rank"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+const UNIT = "{{UNIT}}";
+const geojson = {{GEOJSON}};        // GeoJSON FeatureCollection
+const values = {{VALUES}};          // { regionId: number }
+const idKey = "{{ID_KEY}}";         // GeoJSON feature property name for matching values (e.g. "iso_a3", "name")
+const nameKey = "{{NAME_KEY}}";     // GeoJSON property for display label (often "name")
+const projectionType = "{{PROJECTION}}";  // "naturalEarth1" | "mercator" | "albersUsa"
+const colorInterpolator = "{{INTERPOLATOR}}"; // e.g. "interpolateYlOrRd", "interpolateViridis"
+
+const W = 1100, H = 620;
+const svg = d3.select("#chart").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+
+// Projection
+let projection;
+if (projectionType === "mercator") projection = d3.geoMercator();
+else if (projectionType === "albersUsa") projection = d3.geoAlbersUsa();
+else projection = d3.geoNaturalEarth1();
+
+projection.fitSize([W, H], geojson);
+const path = d3.geoPath(projection);
+
+// Value extent + color scale
+const vals = Object.values(values).filter(v => v != null && !isNaN(v));
+const [vMin, vMax] = d3.extent(vals);
+const vMean = d3.mean(vals);
+const vMid = (vMin + vMax) / 2;
+const interp = d3[colorInterpolator] || d3.interpolateYlOrRd;
+const color = d3.scaleSequential(interp).domain([vMin, vMax]);
+
+// Zoom group
+const zoomG = svg.append("g");
+svg.call(d3.zoom().scaleExtent([1, 8]).on("zoom", e => zoomG.attr("transform", e.transform)));
+
+// Sorted ranking
+const sorted = Object.entries(values).filter(([_,v]) => v != null && !isNaN(v))
+  .sort((a,b) => b[1] - a[1]);
+const rankMap = new Map(sorted.map(([id], i) => [id, i+1]));
+
+function getId(feature){ return feature.properties[idKey];}
+function getName(feature){ return feature.properties[nameKey] || feature.properties[idKey] || "Unknown";}
+function getValue(feature){ return values[getId(feature)];}
+
+// Regions
+const regions = zoomG.selectAll("path.region").data(geojson.features).join("path")
+  .attr("class", d => getValue(d) == null ? "region region-no-data" : "region")
+  .attr("d", path)
+  .attr("fill", d => {
+    const v = getValue(d);
+    return v == null ? null : color(v);
+  })
+  .attr("stroke", "var(--bg-0)").attr("stroke-width", 0.5)
+  .on("mouseenter", regionEnter).on("mousemove", tipMove).on("mouseleave", clearHl);
+
+// Color ramp legend
+const rampSvg = d3.select("#rampSvg");
+const rampW = 256;
+const defs = rampSvg.append("defs");
+const lg = defs.append("linearGradient").attr("id","rampGrad");
+for (let i = 0; i <= 10; i++){
+  lg.append("stop").attr("offset", (i*10) + "%").attr("stop-color", interp(i/10));
+}
+rampSvg.append("rect").attr("width","100%").attr("height", 14).attr("fill","url(#rampGrad)");
+d3.select("#scaleMin").text(vMin.toFixed(1));
+d3.select("#scaleMid").text(vMid.toFixed(1));
+d3.select("#scaleMax").text(vMax.toFixed(1));
+
+// Top regions panel
+const topWrap = d3.select("#topList");
+const topMax = sorted[0][1];
+sorted.slice(0, 6).forEach(([id, v], i) => {
+  const feature = geojson.features.find(f => getId(f) === id);
+  const nm = feature ? getName(feature) : id;
+  const row = topWrap.append("div").attr("class","top-row")
+    .on("mouseenter", () => {
+      regions.classed("dim", f => getId(f) !== id);
+      regions.filter(f => getId(f) === id).classed("glow", true).classed("dim", false);
+    })
+    .on("mouseleave", () => clearHl());
+  row.append("div").attr("class","rk").text("#" + (i+1));
+  row.append("div").attr("class","nm").text(nm);
+  row.append("div").attr("class","vl").text(v.toFixed(1));
+  row.append("div").attr("class","br").style("width", (v/topMax*100) + "%");
+});
+
+const tip = d3.select("#tip");
+function tipMove(e){ tip.style("left",(e.clientX+18)+"px").style("top",(e.clientY+18)+"px");}
+
+function regionEnter(event, d){
+  const v = getValue(d);
+  const id = getId(d);
+  const nm = getName(d);
+  regions.classed("dim", f => getId(f) !== id);
+  d3.select(event.currentTarget).classed("glow", true).classed("dim", false);
+  tip.select(".tname").text(nm);
+  if (v == null){
+    tip.select(".tv-val").text("no data");
+    tip.select(".tv-rank").text("—");
+    tip.select(".tbar").style("background", "var(--bg-2)");
+  } else {
+    tip.select(".tv-val").html(v.toFixed(2) + " <span style='color:var(--ink-mute)'>" + UNIT + "</span>");
+    tip.select(".tv-rank").text("#" + rankMap.get(id) + " of " + sorted.length);
+    tip.select(".tbar").style("background", color(v));
+  }
+  tip.classed("on", true);
+  showDetail(d);
+}
+
+function clearHl(){
+  regions.classed("dim", false).classed("glow", false);
+  tip.classed("on", false);
+}
+
+function showDetail(d){
+  const v = getValue(d);
+  const id = getId(d);
+  const nm = getName(d);
+  d3.select("#dname").text(nm);
+  if (v == null){
+    d3.select("#drole").text("No data");
+    d3.select("#dval").html("—<small>" + UNIT + "</small>");
+    d3.select("#drank").html("—<small></small>");
+    d3.select("#dvmean").html("—<small>%</small>");
+    d3.select("#dpct").html("—<small>%</small>");
+    return;
+  }
+  d3.select("#drole").text("Region · " + idKey + " = " + id);
+  d3.select("#dval").html(v.toFixed(2) + "<small>" + UNIT + "</small>");
+  d3.select("#drank").html("#" + rankMap.get(id) + "<small>of " + sorted.length + "</small>");
+  const vsMean = (v - vMean) / vMean * 100;
+  d3.select("#dvmean").html((vsMean >= 0 ? "+" : "") + vsMean.toFixed(1) + "<small>%</small>");
+  const pct = (1 - (rankMap.get(id) - 1) / sorted.length) * 100;
+  d3.select("#dpct").html(pct.toFixed(1) + "<small>%</small>");
+}
+
+// Entry animation
+regions.style("opacity",0).transition().delay((d,i)=>10 + i*4).duration(400).style("opacity",1);
+</script>
+</body>
+</html>

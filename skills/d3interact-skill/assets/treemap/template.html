@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Treemap · {{TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=JetBrains+Mono:wght@300;400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --bg-0:#0b0d12; --bg-1:#11141b; --bg-2:#181c25;
+    --line:rgba(255,255,255,0.08); --line-2:rgba(255,255,255,0.16);
+    --ink:#ecedef; --ink-dim:#9aa0aa; --ink-mute:#5b6068;
+    --accent:#f0c674; --accent-2:#e36a4a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; background:var(--bg-0); color:var(--ink); font-family:'Inter Tight', sans-serif; overflow-x:hidden;}
+  body::before{content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%),
+      radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);}
+  body::after{content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode:overlay;}
+  .frame{position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:48px 56px 64px;}
+  header.title{display:grid; grid-template-columns:1fr auto; align-items:end; gap:48px; padding-bottom:28px; margin-bottom:28px; border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--ink-mute); display:flex; align-items:center; gap:12px;}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+  h1{font-family:'Fraunces', serif; font-weight:300; font-size:clamp(38px, 4.4vw, 64px); line-height:1.02; letter-spacing:-.02em; margin-top:14px;}
+  h1 em{font-style:italic; font-weight:400; color:var(--accent);}
+  .lede{margin-top:14px; max-width:540px; color:var(--ink-dim); font-size:14px; line-height:1.55;}
+  .meta{text-align:right; font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-mute); letter-spacing:.12em; line-height:1.9;}
+  .meta b{color:var(--ink); font-weight:500;}
+  .breadcrumb-bar{display:flex; align-items:center; gap:8px; padding:10px 14px; margin-bottom:14px; background:var(--bg-1); border:1px solid var(--line); font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-mute);}
+  .breadcrumb-bar .crumb{cursor:pointer; color:var(--ink-dim); transition: color .2s;}
+  .breadcrumb-bar .crumb:hover{color:var(--accent);}
+  .breadcrumb-bar .crumb.active{color:var(--ink);}
+  .breadcrumb-bar .sep{color:var(--ink-mute);}
+  .stage{display:grid; grid-template-columns: 1fr 280px; gap:28px;}
+  .chart-wrap{position:relative; aspect-ratio: 16 / 10; background:var(--bg-1); border:1px solid var(--line);}
+  .chart-wrap svg{width:100%; height:100%; display:block;}
+  .cell{cursor:pointer; transition: opacity .25s ease, filter .25s ease;}
+  .cell rect.cell-rect{transition: filter .2s;}
+  .cell:hover rect.cell-rect{filter: brightness(1.15) saturate(1.1);}
+  .cell.dim{opacity:.22;}
+  .cell.glow rect.cell-rect{filter: drop-shadow(0 0 14px rgba(240,198,116,.4)) brightness(1.15);}
+  .cell text{pointer-events:none; font-family:'Inter Tight', sans-serif;}
+  .cell .cell-name{font-weight:500; fill:rgba(11,13,18,.9);}
+  .cell .cell-val{font-family:'JetBrains Mono', monospace; fill:rgba(11,13,18,.65);}
+  .cell-parent text{pointer-events:none;}
+  .panel-detail{padding:20px 18px; background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0)); border:1px solid var(--line);}
+  .panel-detail h3{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.28em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:12px;}
+  .panel-detail .name{font-family:'Fraunces', serif; font-weight:400; font-size:24px; line-height:1.15; margin-bottom:6px;}
+  .panel-detail .path{font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-mute); letter-spacing:.15em; margin-bottom:16px; text-transform:uppercase; word-break: break-word;}
+  .stat-row{display:flex; justify-content:space-between; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--line);}
+  .stat-row .k{font-size:11px; color:var(--ink-mute); letter-spacing:.1em; text-transform:uppercase; font-family:'JetBrains Mono', monospace;}
+  .stat-row .v{font-family:'Fraunces', serif; font-weight:300; font-size:22px;}
+  .stat-row .v small{font-size:11px; font-family:'JetBrains Mono', monospace; color:var(--ink-mute); margin-left:4px;}
+  .top-list{margin-top:22px;}
+  .top-list h4{font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:.22em; color:var(--ink-mute); text-transform:uppercase; margin-bottom:10px;}
+  .top-row{display:flex; align-items:center; gap:8px; padding:7px 0; font-size:12px; cursor:pointer; position:relative; transition: padding .2s;}
+  .top-row:hover{padding-left:4px;}
+  .top-row .dot{width:8px; height:8px; flex-shrink:0; border-radius:1px;}
+  .top-row .nm{flex:1;}
+  .top-row .vl{font-family:'JetBrains Mono', monospace; color:var(--ink-mute); font-size:10.5px;}
+  .top-row .br{position:absolute; left:0; bottom:0; height:1px; background:var(--accent); opacity:.4; transition: width .5s;}
+  .controls{margin-top:22px; padding-top:18px; border-top:1px solid var(--line);}
+  .ctrl{display:flex; justify-content:space-between; padding:8px 0; font-size:11px; color:var(--ink-dim); font-family:'JetBrains Mono', monospace; letter-spacing:.08em;}
+  .ctrl kbd{background:var(--bg-2); border:1px solid var(--line-2); padding:2px 6px; border-radius:2px; color:var(--ink); font-family:'JetBrains Mono', monospace; font-size:10px;}
+  .tip{position:fixed; pointer-events:none; z-index:99; background:rgba(17,20,27,.96); border:1px solid var(--line-2); padding:10px 14px; min-width:170px; font-size:12px; box-shadow:0 20px 40px rgba(0,0,0,.4); backdrop-filter: blur(8px); opacity:0; transform: translateY(4px); transition: opacity .15s, transform .15s;}
+  .tip.on{opacity:1; transform:translateY(0);}
+  .tip .tname{font-family:'Fraunces', serif; font-size:16px; margin-bottom:4px;}
+  .tip .tpath{font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
+  .tip .trow{display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
+  .tip .trow .tk{color:var(--ink-mute);}
+  .tip .tbar{width:100%; height:2px; margin-top:8px; background:var(--accent);}
+  @media (max-width: 1100px){.stage{grid-template-columns:1fr;} .frame{padding:32px 24px;} header.title{grid-template-columns:1fr;} .meta{text-align:left;}}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="title">
+    <div>
+      <div class="eyebrow"><span class="dot"></span> {{EYEBROW}}</div>
+      <h1>{{H1_LEFT}} <em>{{H1_EM}}</em><br>{{H1_RIGHT}}</h1>
+      <p class="lede">{{LEDE}}</p>
+    </div>
+    <div class="meta">
+      <b>{{META_TITLE}}</b> &nbsp; / &nbsp; {{META_SUB}}<br>
+      Dataset · {{META_DATA}}<br>
+      Idiom · <b>Treemap</b> &nbsp; / &nbsp; Marks · rects
+    </div>
+  </header>
+
+  <div class="breadcrumb-bar" id="bcBar"></div>
+
+  <div class="stage">
+    <div class="chart-wrap">
+      <svg id="chart"></svg>
+    </div>
+    <aside class="panel-detail">
+      <h3>Selection</h3>
+      <div class="name" id="dname">{{ROOT_NAME}}</div>
+      <div class="path" id="dpath">— root —</div>
+      <div class="stat-row"><span class="k">Value</span><span class="v" id="dval">—<small>{{UNIT}}</small></span></div>
+      <div class="stat-row"><span class="k">Share</span><span class="v" id="dshare">—<small>%</small></span></div>
+      <div class="stat-row"><span class="k">Children</span><span class="v" id="dkids">—<small>items</small></span></div>
+      <div class="top-list" id="topList"></div>
+      <div class="controls">
+        <div class="ctrl"><span>Zoom in</span><kbd>Click cell</kbd></div>
+        <div class="ctrl"><span>Zoom out</span><kbd>Crumbs</kbd></div>
+        <div class="ctrl"><span>Inspect</span><kbd>Hover</kbd></div>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="tip" id="tip">
+  <div class="tname"></div>
+  <div class="tpath"></div>
+  <div class="trow"><span class="tk">Value</span><span class="tv tv-val"></span></div>
+  <div class="trow"><span class="tk">Share</span><span class="tv tv-share"></span></div>
+  <div class="tbar"></div>
+</div>
+
+<script>
+const UNIT = "{{UNIT}}";
+const data = {{DATA}};
+const topLevelColors = {{COLORS}};
+
+const W = 1000, H = 625;
+const svg = d3.select("#chart").attr("viewBox", `0 0 ${W} ${H}`).attr("preserveAspectRatio","xMidYMid meet");
+const root = d3.hierarchy(data).sum(d => d.value || 0).sort((a,b) => b.value - a.value);
+const totalValue = root.value;
+
+d3.treemap().size([W, H]).paddingInner(2).paddingOuter(4).paddingTop(d => d.depth === 0 ? 0 : 22).round(true)(root);
+
+function colorFor(node){
+  if (!node.parent) return "var(--bg-2)";
+  let top = node; while (top.depth > 1) top = top.parent;
+  const base = topLevelColors[top.data.name] || "#888";
+  const hsl = d3.hsl(base);
+  if (node.depth === 1) return hsl.formatHex();
+  if (node.depth === 2){ hsl.l = Math.min(.78, hsl.l + .08); return hsl.formatHex();}
+  hsl.l = Math.min(.85, hsl.l + .18); hsl.s *= .85; return hsl.formatHex();
+}
+
+let currentRoot = root;
+
+function render(node){
+  currentRoot = node;
+  // Re-layout treemap relative to this node
+  const lroot = d3.hierarchy(node.data).sum(d => d.value || 0).sort((a,b)=>b.value-a.value);
+  d3.treemap().size([W, H]).paddingInner(2).paddingOuter(4).paddingTop(d => d.depth === 0 ? 22 : 4).round(true)(lroot);
+
+  svg.selectAll("*").remove();
+
+  // Parent header
+  const header = svg.append("g").attr("class","cell-parent");
+  header.append("rect").attr("x",0).attr("y",0).attr("width",W).attr("height",22)
+    .attr("fill","var(--bg-2)").attr("stroke","var(--line)").attr("stroke-width",0.5);
+  header.append("text").attr("x",10).attr("y",15).attr("font-family","JetBrains Mono, monospace").attr("font-size",10)
+    .attr("letter-spacing","0.18em").attr("text-transform","uppercase").attr("fill","var(--ink-dim)")
+    .text(getBreadcrumbString(node).toUpperCase());
+
+  // Cells
+  const cells = svg.append("g").selectAll("g.cell").data(lroot.descendants().filter(d => d.depth > 0)).join("g")
+    .attr("class","cell")
+    .attr("transform", d => `translate(${d.x0},${d.y0})`)
+    .on("click", (event, d) => {
+      // Find the corresponding node in the global tree
+      const fullNode = findNodeByPath(node, d);
+      if (fullNode && fullNode.children) render(fullNode);
+    })
+    .on("mouseenter", function(event, d){
+      const fullNode = findNodeByPath(node, d);
+      cells.classed("dim", n => n !== d);
+      d3.select(this).classed("glow", true).classed("dim", false);
+      showTip(event, fullNode || d);
+      updateDetail(fullNode || d);
+    })
+    .on("mousemove", e => tip.style("left",(e.clientX+18)+"px").style("top",(e.clientY+18)+"px"))
+    .on("mouseleave", function(){
+      cells.classed("dim", false).classed("glow", false);
+      tip.classed("on", false);
+      updateDetail(currentRoot);
+    });
+
+  cells.append("rect").attr("class","cell-rect")
+    .attr("width", d => Math.max(0, d.x1 - d.x0))
+    .attr("height", d => Math.max(0, d.y1 - d.y0))
+    .attr("fill", d => colorFor(remapToColor(node, d)))
+    .attr("fill-opacity", d => d.children ? 0.55 : 0.92)
+    .attr("stroke","var(--bg-0)").attr("stroke-width", 1);
+
+  cells.filter(d => (d.x1-d.x0) > 60 && (d.y1-d.y0) > 28)
+    .append("text").attr("class","cell-name").attr("x",8).attr("y",18)
+    .attr("font-size", d => Math.min(15, Math.max(11, (d.x1-d.x0)/12)))
+    .text(d => d.data.name);
+
+  cells.filter(d => (d.x1-d.x0) > 90 && (d.y1-d.y0) > 48)
+    .append("text").attr("class","cell-val").attr("x",8).attr("y",36)
+    .attr("font-size", 11)
+    .text(d => (d.value || 0).toFixed(2) + " " + UNIT);
+
+  // Entry animation
+  cells.style("opacity",0).transition().delay((d,i)=>15+i*8).duration(500).style("opacity",1);
+
+  buildBreadcrumb(node);
+  updateDetail(node);
+}
+
+function remapToColor(localRoot, d){
+  // For coloring, we need to find the depth-1 ancestor in the GLOBAL tree
+  // since localRoot's depth-1 nodes might not be original top-level categories.
+  const globalNode = findNodeByPath(localRoot, d);
+  return globalNode || d;
+}
+
+function findNodeByPath(localRoot, target){
+  // Walk from localRoot down using ancestor names of target
+  const names = target.ancestors().reverse().slice(1).map(a => a.data.name);
+  // localRoot is in the global tree; descend matching names
+  let cur = localRoot;
+  for (const n of names){
+    if (!cur.children) return null;
+    cur = cur.children.find(c => c.data.name === n);
+    if (!cur) return null;
+  }
+  return cur;
+}
+
+function getBreadcrumbString(node){
+  return node.ancestors().reverse().map(a => a.data.name).join(" / ");
+}
+
+function buildBreadcrumb(node){
+  const bc = d3.select("#bcBar"); bc.html("");
+  const chain = node.ancestors().reverse();
+  chain.forEach((a, i) => {
+    bc.append("span").attr("class", "crumb" + (a === node ? " active" : ""))
+      .text(a.data.name)
+      .on("click", () => render(a));
+    if (i < chain.length - 1) bc.append("span").attr("class","sep").text("▸");
+  });
+}
+
+const tip = d3.select("#tip");
+function showTip(event, d){
+  const path = d.ancestors().reverse().slice(1).map(a => a.data.name).join(" / ");
+  const parentShare = d.parent ? (d.value / d.parent.value * 100) : 100;
+  tip.select(".tname").text(d.data.name);
+  tip.select(".tpath").text(path);
+  tip.select(".tv-val").html(d.value.toFixed(2) + " <span style='color:var(--ink-mute)'>" + UNIT + "</span>");
+  tip.select(".tv-share").text(parentShare.toFixed(1) + "%");
+  tip.select(".tbar").style("background", colorFor(d));
+  tip.classed("on", true);
+  tip.style("left",(event.clientX+18)+"px").style("top",(event.clientY+18)+"px");
+}
+
+function updateDetail(node){
+  d3.select("#dname").text(node.data.name);
+  d3.select("#dpath").text(getBreadcrumbString(node));
+  d3.select("#dval").html(node.value.toFixed(2) + "<small>" + UNIT + "</small>");
+  const share = node.parent ? (node.value / totalValue * 100) : 100;
+  d3.select("#dshare").html(share.toFixed(2) + "<small>%</small>");
+  d3.select("#dkids").html((node.children ? node.children.length : 0) + "<small>items</small>");
+  const wrap = d3.select("#topList"); wrap.html("");
+  if (node.children && node.children.length){
+    wrap.append("h4").text("Top sub-items");
+    const sorted = node.children.slice().sort((a,b)=>b.value-a.value).slice(0, 8);
+    const max = sorted[0].value;
+    sorted.forEach(c => {
+      const row = wrap.append("div").attr("class","top-row")
+        .on("click", () => { if (c.children) render(c);});
+      row.append("div").attr("class","dot").style("background", colorFor(c));
+      row.append("div").attr("class","nm").text(c.data.name);
+      row.append("div").attr("class","vl").text(c.value.toFixed(2));
+      row.append("div").attr("class","br").style("width", (c.value/max*100) + "%");
+    });
+  }
+}
+
+render(root);
+</script>
+</body>
+</html>
