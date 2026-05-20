@@ -169,7 +169,7 @@ d3interact-skill/
 <table>
   <tr>
     <td><img src="example\i1.png" width="800"></td>
-    <td><img src="sexample\i2.png" width="800"></td>
+    <td><img src="example\i2.png" width="800"></td>
   </tr>
   <tr>
     <td><img src="example\i3.png" width="800"></td>
