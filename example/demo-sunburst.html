@@ -14,16 +14,16 @@
 
 <style>
   :root{
-    --bg-0:      #0b0d12;
-    --bg-1:      #11141b;
-    --bg-2:      #181c25;
-    --line:      rgba(255,255,255,0.08);
-    --line-2:    rgba(255,255,255,0.16);
-    --ink:       #ecedef;
-    --ink-dim:   #9aa0aa;
-    --ink-mute:  #5b6068;
-    --accent:    #f0c674;
-    --accent-2:  #e36a4a;
+    --bg-0:      #f5f5f5;
+    --bg-1:      #ffffff;
+    --bg-2:      #ebebeb;
+    --line:      rgba(0,0,0,0.08);
+    --line-2:    rgba(0,0,0,0.16);
+    --ink:       #1a1d24;
+    --ink-dim:   #5b6068;
+    --ink-mute:  #9aa0aa;
+    --accent:    #b8862e;
+    --accent-2:  #c8553d;
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -33,13 +33,13 @@
   body::before{
     content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
     background:
-      radial-gradient(800px 600px at 18% 12%, rgba(240,198,116,.06), transparent 60%),
-      radial-gradient(900px 700px at 85% 88%, rgba(227,106,74,.05), transparent 60%);
+      radial-gradient(800px 600px at 18% 12%, rgba(184,134,46,.05), transparent 60%),
+      radial-gradient(900px 700px at 85% 88%, rgba(200,85,61,.04), transparent 60%);
   }
   body::after{
-    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-    mix-blend-mode:overlay;
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.18;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode:multiply;
   }
 
   .frame{
@@ -78,7 +78,7 @@
 
   /* —— 左侧：图例 + 控件 —— */
   .panel{
-    background:linear-gradient(180deg, var(--bg-1), rgba(17,20,27,0));
+    background:linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0));
     border:1px solid var(--line);
     border-radius:2px;
     padding:20px 18px;
@@ -140,9 +140,9 @@
     cursor:pointer;
     transition: opacity .25s ease, filter .25s ease, stroke-width .2s ease;
   }
-  .arc:hover{ filter: brightness(1.18) saturate(1.1); }
+  .arc:hover{ filter: brightness(1.08) saturate(1.15); }
   .arc.dim{ opacity:.22;}
-  .arc.glow{ filter: drop-shadow(0 0 14px rgba(240,198,116,.5)) brightness(1.15); stroke:#0b0d12; stroke-width:1.5px;}
+  .arc.glow{ filter: drop-shadow(0 0 14px rgba(184,134,46,.45)) brightness(1.05); stroke:#ffffff; stroke-width:1.5px;}
 
   /* 弧上文字 */
   .arc-label{
@@ -178,7 +178,7 @@
     text-transform:uppercase;
     transition: fill .2s;
   }
-  .center-back:hover{ fill:#fff;}
+  .center-back:hover{ fill:var(--ink);}
 
   /* —— 右侧：详情面板 —— */
   .detail{ min-height:300px;}
@@ -239,21 +239,21 @@
   /* —— Tooltip —— */
   .tip{
     position:fixed; pointer-events:none; z-index:99;
-    background:rgba(17,20,27,.96);
-    border:1px solid var(--line-2); border-radius:2px;
+    background:rgba(26,29,36,.96);
+    border:1px solid rgba(255,255,255,0.08); border-radius:2px;
     padding:10px 14px; min-width:160px;
-    font-size:12px; color:var(--ink);
-    box-shadow: 0 20px 40px rgba(0,0,0,.4);
+    font-size:12px; color:#ecedef;
+    box-shadow: 0 20px 40px rgba(0,0,0,.18);
     backdrop-filter: blur(8px);
     opacity:0; transform: translateY(4px);
     transition: opacity .15s, transform .15s;
   }
   .tip.on{ opacity:1; transform:translateY(0);}
   .tip .tname{ font-family:'Fraunces', serif; font-size:16px; font-weight:400; margin-bottom:4px;}
-  .tip .tpath{ font-family:'JetBrains Mono', monospace; font-size:9.5px; color:var(--ink-mute); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
+  .tip .tpath{ font-family:'JetBrains Mono', monospace; font-size:9.5px; color:rgba(255,255,255,.5); letter-spacing:.12em; margin-bottom:8px; text-transform:uppercase;}
   .tip .trow{ display:flex; justify-content:space-between; gap:18px; font-family:'JetBrains Mono', monospace; font-size:11px;}
-  .tip .trow .tk{color:var(--ink-mute);}
-  .tip .trow .tv{color:var(--ink);}
+  .tip .trow .tk{color:rgba(255,255,255,.5);}
+  .tip .trow .tv{color:#ecedef;}
   .tip .tcolor{ width:100%; height:2px; margin-top:8px; background:var(--accent);}
 
   /* —— 底部分析区 —— */
@@ -639,32 +639,41 @@ let focus = root;
 
 // 中心区域
 const centerG = g.append("g").attr("class","center-g");
+
+// 主中心圆：扩大可点击半径到内圈实际边界（radius/4 是第一层 y0=1 的位置）
 const centerCircle = centerG.append("circle")
-  .attr("r", radius / 4 - 6)
+  .attr("r", radius / 4 - 2)
   .attr("fill", "var(--bg-1)")
   .attr("stroke","var(--line-2)")
   .attr("stroke-width", 0.5)
-  .style("cursor","pointer")
-  .on("click", () => {
-    if (focus.parent) clicked(null, focus.parent);
-  });
+  .style("cursor","pointer");
 
 const centerBack = centerG.append("text")
   .attr("class","center-back")
   .attr("y", -28)
   .attr("opacity", 0)
+  .style("pointer-events","none")
   .text("↑ BACK");
 
 const centerNum = centerG.append("text")
   .attr("class","center-num")
   .attr("y", 6)
   .attr("font-size", 36)
+  .style("pointer-events","none")
   .text(totalValue.toFixed(2));
 
 const centerLbl = centerG.append("text")
   .attr("class","center-lbl")
   .attr("y", 30)
+  .style("pointer-events","none")
   .text("GT CO₂ · TOTAL");
+
+// 把 click 绑定到整个 centerG（这样文字区域、圆环边界附近都能响应）
+centerG
+  .style("cursor","pointer")
+  .on("click", () => {
+    if (focus && focus.parent) clicked(null, focus.parent);
+  });
 
 /* ========================================================================
    交互逻辑
